@@ -1,1 +1,1 @@
-The contents of [the website](https://mhurk.github.io/) are located in the `gh-files` branch.
+The contents of [the website](https://mhurk.github.io/) are located in the `gh-pages` branch.
