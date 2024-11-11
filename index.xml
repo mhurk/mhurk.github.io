@@ -13,7 +13,7 @@
       <link>https://mhurk.github.io/posts/my-test-post/</link>
       <pubDate>Mon, 11 Nov 2024 19:10:17 +0100</pubDate>
       <guid>https://mhurk.github.io/posts/my-test-post/</guid>
-      <description>&lt;h3 id=&#34;this-is-the-header-of-the-first-test-post&#34;&gt;this is the header of the first test post&lt;/h3&gt;&#xA;&lt;p&gt;This is some text.&lt;/p&gt;&#xA;&lt;p&gt;and an image:&#xA;&lt;img src=&#34;posts/my-test-post/image1.webp&#34; alt=&#34;image&#34;&gt;&lt;/p&gt;</description>
+      <description>&lt;h3 id=&#34;this-is-the-header-of-the-first-test-post&#34;&gt;this is the header of the first test post&lt;/h3&gt;&#xA;&lt;p&gt;This is some text.&lt;/p&gt;&#xA;&lt;p&gt;and an image:&#xA;&lt;img src=&#34;image1.webp&#34; alt=&#34;image&#34;&gt;&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>
