@@ -2,13 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://mhurk.github.io/posts/my-test-post/</loc>
-    <lastmod>2024-11-11T19:10:17+01:00</lastmod>
-  </url><url>
     <loc>https://mhurk.github.io/</loc>
     <lastmod>2024-11-11T19:10:17+01:00</lastmod>
   </url><url>
     <loc>https://mhurk.github.io/posts/</loc>
+    <lastmod>2024-11-11T19:10:17+01:00</lastmod>
+  </url><url>
+    <loc>https://mhurk.github.io/posts/my-test-post/</loc>
     <lastmod>2024-11-11T19:10:17+01:00</lastmod>
   </url><url>
     <loc>https://mhurk.github.io/categories/</loc>

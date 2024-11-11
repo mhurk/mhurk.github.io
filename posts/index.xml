@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Posts on My New Hugo Site</title>
+    <title>Posts on mhurk</title>
     <link>https://mhurk.github.io/posts/</link>
-    <description>Recent content in Posts on My New Hugo Site</description>
+    <description>Recent content in Posts on mhurk</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate>Mon, 11 Nov 2024 19:10:17 +0100</lastBuildDate>
     <atom:link href="https://mhurk.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>A test post</title>
+      <title>This is a test post</title>
       <link>https://mhurk.github.io/posts/my-test-post/</link>
       <pubDate>Mon, 11 Nov 2024 19:10:17 +0100</pubDate>
       <guid>https://mhurk.github.io/posts/my-test-post/</guid>
-      <description>&lt;h3 id=&#34;this-is-the-header-of-the-first-test-post&#34;&gt;this is the header of the first test post&lt;/h3&gt;&#xA;&lt;p&gt;This is some text.&lt;/p&gt;&#xA;&lt;p&gt;and an image:&#xA;&lt;img src=&#34;image1.webp&#34; alt=&#34;image&#34;&gt;&lt;/p&gt;</description>
+      <description>&lt;p&gt;This is some text.&#xA;&amp;ldquo;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.&amp;rdquo;&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>
