@@ -13,7 +13,7 @@
       <link>https://mhurk.github.io/posts/iframe-test/</link>
       <pubDate>Tue, 12 Nov 2024 20:30:21 +0100</pubDate>
       <guid>https://mhurk.github.io/posts/iframe-test/</guid>
-      <description>&lt;p&gt;this is a test with html in an iframe&lt;/p&gt;&#xA;&lt;!-- raw HTML omitted --&gt;</description>
+      <description>&lt;p&gt;this is a test with html in an iframe&lt;/p&gt;&#xA;&lt;!-- raw HTML omitted --&gt;&#xA;&lt;p&gt;more testing&lt;/p&gt;</description>
     </item>
     <item>
       <title>This is a test post</title>
