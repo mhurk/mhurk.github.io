@@ -8,7 +8,6 @@ to origin/gh-pages. Any other change sitting in the working tree (e.g. an
 edit to index.html) is committed and pushed along with it, not just the
 data files.
 """
-import csv
 import json
 import subprocess
 import sys
@@ -41,12 +40,13 @@ ALPHAESS_SRC = Path(r"D:\Projects\AlphaESS_history\src")
 ALPHAESS_DB = Path(r"D:\Projects\AlphaESS_history\data\alphaess.db")
 BATTERY_HEATMAP_DAYS = 75  # ~3 months — keeps this repo's copy a stable size as the source grows
 
-# Solar production plots (CSV exports, not a project of their own — no sibling
-# CLAUDE.md/sync script to point at). Years before the panels existed are all
-# zero in these CSVs, so only years with real production get published.
-SOLAR_DIR = Path(r"\\BigStation\data\Home Assistant\Self_sufficiency\plots")
-SOLAR_WEEKLY_CSV = SOLAR_DIR / "solar_production_weekly.csv"
-SOLAR_MONTHLY_CSV = SOLAR_DIR / "solar_production_monthly.csv"
+# Sibling project for solar production. Its own export_performance_data.py
+# computes a monthly_by_year aggregate but no weekly one, so this queries
+# solaredge.db directly — same SQL its fetch_daily() uses (sum of the
+# 'Production' meter per day), just bucketed by ISO week as well as by
+# month. Replaced the earlier \\BigStation Home Assistant CSV export, which
+# wasn't accurate/complete enough (HA's own solar_production history).
+SOLAREDGE_DB = Path(r"D:\Projects\Solaredge_history\solaredge.db")
 MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
 
 
@@ -109,40 +109,52 @@ def sync_battery_heatmap() -> list[str]:
 def sync_solar_charts() -> list[str]:
     """Republish weekly/monthly solar production, grouped by year.
 
-    Reads the two solar_production_*.csv exports directly (plain CSVs, not
-    a project with its own sync/export step). Years that are all-zero (the
-    history predates the panels) are left out entirely.
+    Queries solaredge.db directly for daily production (same SQL as the
+    sibling project's own fetch_daily()), then buckets those daily kWh
+    figures into both calendar months and ISO weeks here. Years that are
+    all-zero are left out entirely (defensive; shouldn't happen with this
+    source, unlike the old CSV one).
     """
-    if not SOLAR_WEEKLY_CSV.exists() or not SOLAR_MONTHLY_CSV.exists():
-        print(f"skipping solar charts: {SOLAR_DIR} not found", file=sys.stderr)
+    if not SOLAREDGE_DB.exists():
+        print(f"skipping solar charts: {SOLAREDGE_DB} not found", file=sys.stderr)
         return []
 
-    written = []
+    import sqlite3
+    conn = sqlite3.connect(SOLAREDGE_DB)
+    try:
+        daily = conn.execute(
+            "SELECT substr(timestamp,1,10) AS day, SUM(value)/1000.0 AS kwh "
+            "FROM energy_details WHERE meter_type='Production' GROUP BY day ORDER BY day"
+        ).fetchall()
+    finally:
+        conn.close()
 
-    # Monthly: "YYYY-MM" -> 12 slots per year, None where no row exists yet.
+    written = []
     monthly_by_year: dict[str, list[float | None]] = {}
-    with SOLAR_MONTHLY_CSV.open(newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            year, month = row["month"].split("-")
-            monthly_by_year.setdefault(year, [None] * 12)[int(month) - 1] = float(row["solar_kwh"])
+    weekly_by_year: dict[str, list[float | None]] = {}
+
+    for day_str, kwh in daily:
+        d = date.fromisoformat(day_str)
+
+        month_year = str(d.year)
+        row = monthly_by_year.setdefault(month_year, [None] * 12)
+        row[d.month - 1] = (row[d.month - 1] or 0) + kwh
+
+        iso_year, iso_week, _ = d.isocalendar()
+        week_year = str(iso_year)
+        row = weekly_by_year.setdefault(week_year, [None] * 53)
+        row[iso_week - 1] = (row[iso_week - 1] or 0) + kwh
+
     monthly_years = sorted(y for y, vals in monthly_by_year.items()
                             if any(v is not None and v > 0 for v in vals))
     path = DATA_DIR / "solar_monthly.json"
     path.write_text(json.dumps({
         "periods": MONTH_LABELS,
-        "years": {y: monthly_by_year[y] for y in monthly_years},
+        "years": {y: [round(v, 2) if v is not None else None for v in monthly_by_year[y]]
+                  for y in monthly_years},
     }, indent=2) + "\n", encoding="utf-8")
     written.append("data/solar_monthly.json")
 
-    # Weekly: ISO (year, week) -> 53 slots per year. Month tick positions are
-    # computed once against a reference year (ISO week numbers for a given
-    # month start drift by at most a week year to year).
-    weekly_by_year: dict[str, list[float | None]] = {}
-    with SOLAR_WEEKLY_CSV.open(newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            d = date.fromisoformat(row["week_start"])
-            iso_year, iso_week, _ = d.isocalendar()
-            weekly_by_year.setdefault(str(iso_year), [None] * 53)[iso_week - 1] = float(row["solar_kwh"])
     weekly_years = sorted(y for y, vals in weekly_by_year.items()
                            if any(v is not None and v > 0 for v in vals))
     ref_year = int(weekly_years[-1]) if weekly_years else date.today().year
@@ -152,7 +164,8 @@ def sync_solar_charts() -> list[str]:
     path.write_text(json.dumps({
         "n_periods": 53,
         "month_ticks": month_ticks,
-        "years": {y: weekly_by_year[y] for y in weekly_years},
+        "years": {y: [round(v, 2) if v is not None else None for v in weekly_by_year[y]]
+                  for y in weekly_years},
     }, indent=2) + "\n", encoding="utf-8")
     written.append("data/solar_weekly.json")
 

@@ -22,9 +22,9 @@ home battery data (state of charge by hour and date), and solar production
 - `data/battery_heatmap.json` — mean state of charge per (date, hour) cell,
   sourced from the sibling `AlphaESS_history` project's `sizing.load()`.
 - `data/solar_weekly.json`, `data/solar_monthly.json` — solar production
-  grouped by year, read straight from the `solar_production_weekly/monthly.csv`
-  exports on `\\BigStation`. Years that predate the panels (all-zero) are
-  left out.
+  grouped by year, queried directly from the sibling `Solaredge_history`
+  project's `solaredge.db` (daily production summed into months/ISO weeks
+  here, since that project only precomputes a monthly aggregate itself).
 - `scripts/sync_dashboards.py` — run weekly from home: republishes all of
   the above (stripping the Weheat export's approximate home location), then
   commits and pushes anything changed in the working tree. See
@@ -39,8 +39,6 @@ here is the deploy.
 
 Double-clicking `index.html` (a `file:// URL`) won't show the charts, because the page fetches the JSON data files (data/*.json) with fetch(), and browsers block fetch() of local files for security reasons under `file://`. It needs an actual HTTP server, even a trivial local one.
 
-Open a terminal in the repo folder and run: 
+Open a terminal in the repo folder and run: <code>python -m http.server 8000</code>
 
-<code>python -m http.server 8000</code>
-
-then open `http://localhost:8000/index.html` in your browser. That serves the folder over real HTTP, so the fetch() calls succeed and you'll see the charts exactly as they render on the live site. Any port number works; just pick one that's free. Stop the server afterward with Ctrl+C (or close the terminal).
+Then open `http://localhost:8000/index.html` in your browser. That serves the folder over real HTTP, so the fetch() calls succeed and you'll see the charts exactly as they render on the live site. Any port number works; just pick one that's free. Stop the server afterward with Ctrl+C (or close the terminal).
