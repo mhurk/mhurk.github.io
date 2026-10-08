@@ -9,9 +9,10 @@ density map across both, and compressor RPM binned by outdoor temperature.
 
 ## Structure
 
-- `index.html` — the page. Fetches the four JSON files below and draws the
-  charts client-side (plain SVG, no charting library).
+- `index.html` — the markup.
 - `css/site.css` — all styling, reusable by future pages.
+- `js/charts.js` — fetches the four JSON files below and draws the charts
+  client-side (plain SVG, no charting library), also reusable by future pages.
 - `data/defrost_vs_temp.json`, `data/defrost_vs_humidity.json`,
   `data/defrost_heatmap.json`, `data/compressor_rpm.json` — binned
   aggregates, not time series. Each one is overwritten wholesale by the sync
