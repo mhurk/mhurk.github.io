@@ -28,7 +28,7 @@ html,body{margin:0;padding:0;}
 body{
   background:var(--bg);
   color:var(--ink-1);
-  font-family:'JetBrains Mono','Cascadia Code','Fira Code',ui-monospace,Consolas,monospace;
+  font-family: 'Courier New', 'JetBrains Mono', 'Cascadia Code','Fira Code',  ui-monospace,Consolas,monospace;
   padding-inline:16px;
   padding-block:28px;
   max-width:860px;
@@ -185,9 +185,7 @@ footer .k{color:var(--ink-2);}
 
     <p class="bio">
       <b>$ cat about.txt</b><br>
-      This page tracks three numbers from the house: how hard the <b>heat pump</b> is working,
-      how charged the <b>battery</b> stays, and how much is pulled from the <b>grid</b>.
-      A script on my own machine refreshes the data weekly — nothing here calls out to a server.
+      This page shows some graphs from my home automation system. Sometimes new graphs will be added and sometimes older ones will be removed. Probably because I think they are useless or just ugly. Data is updated on a more or less regular basis, about one time per week. So no live feed.
     </p>
 
     <p class="section-label">$ ls ./dashboards -la</p>
@@ -196,7 +194,7 @@ footer .k{color:var(--ink-2);}
 
       <div class="card" id="card-weheat">
         <div class="card-head">
-          <span class="card-name">WEHEAT<span class="dim">(1)</span></span>
+          <span class="card-name">Heat pump<span class="dim">(1)</span></span>
           <span class="card-unit">COP</span>
         </div>
         <p class="card-desc">Heat pump coefficient of performance — 7-day average.</p>
@@ -240,13 +238,13 @@ footer .k{color:var(--ink-2);}
 
     <p class="note">
       <b>#</b> seed data — these three series are placeholders standing in for the real
-      WeHeat / battery / grid feeds, which are still being wired up. Layout and refresh
+      heat pump / battery / grid feeds, which are still being wired up. Layout and refresh
       behavior are final; <code>data/*.json</code> is what the weekly script will overwrite.
     </p>
 
     <footer>
       <div><span class="k">$</span> schedule</div>
-      <div>0 8 * * 1  sync-dashboards.py&nbsp;&nbsp;<span class="k"># Windows Task Scheduler, runs weekly from home, pushes data/*.json</span></div>
+      <div>0 8 * * 1  sync-dashboards.py&nbsp;&nbsp;<span class="k"># Task Scheduler, runs approximately weekly from home, pushes data/*.json</span></div>
       <div style="margin-top:8px;"><span class="k">source</span> <a href="https://github.com/mhurk/mhurk.github.io" target="_blank" rel="noopener">github.com/mhurk/mhurk.github.io</a></div>
     </footer>
   </div>

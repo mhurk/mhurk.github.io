@@ -3,7 +3,9 @@
 
 Run this once a week (see run_sync.bat for wiring it up to Windows Task
 Scheduler). Each run appends one data point per series to data/*.json, then
-commits and pushes to origin/gh-pages.
+commits and pushes to origin/gh-pages. Any other change sitting in the
+working tree (e.g. an edit to index.html) is committed and pushed along
+with it, not just the data files.
 """
 import json
 import subprocess
@@ -64,7 +66,7 @@ def git(*args: str) -> None:
 
 def main() -> int:
     today = date.today().isoformat()
-    changed = []
+    synced = []
 
     for filename, fetch in SERIES.items():
         path = DATA_DIR / filename
@@ -74,23 +76,26 @@ def main() -> int:
             print(f"skipping {filename}: {exc}", file=sys.stderr)
             continue
         append_point(path, value, today)
-        changed.append(f"data/{filename}")
+        synced.append(f"data/{filename}")
 
-    if not changed:
-        print("nothing to sync (no data sources wired up yet)")
-        return 0
-
-    git("add", *changed)
+    # Stage everything, not just the data files — picks up any other edits
+    # (index.html, scripts, etc.) sitting in the working tree.
+    git("add", "-A")
     staged_clean = subprocess.run(
         ["git", "diff", "--cached", "--quiet"], cwd=REPO_ROOT
     )
     if staged_clean.returncode == 0:
-        print("no new data this week")
+        print("nothing to sync (no data updates and no other changes)")
         return 0
 
-    git("commit", "-m", f"Weekly data sync: {today}")
+    if synced:
+        message = f"Weekly sync: {today} ({', '.join(synced)})"
+    else:
+        message = f"Weekly sync: {today} (site changes only)"
+
+    git("commit", "-m", message)
     git("push")
-    print(f"synced and pushed: {', '.join(changed)}")
+    print(f"committed and pushed changes as of {today}")
     return 0
 
 
