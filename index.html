@@ -16,8 +16,7 @@
     <div class="win-path">visitor@mhurk:~ — github pages</div>
   </div>
   <div class="win-body">
-    <div class="prompt">visitor@mhurk:~$ <span class="cmd">whoami</span> <span class="cursor"></span></div>
-    <h1>mhurk</h1>
+    <!--  <div class="prompt">visitor@mhurk:~$ <span class="cmd">whoami</span> <span class="cursor"></span></div> -->    <h1>mhurk</h1>
     <p class="tagline">Home automation and energy enthusiast.</p>
 
     <p class="bio">
@@ -25,15 +24,16 @@
       This page shows some graphs from my home automation system. Sometimes new graphs will be added and sometimes older ones will be removed. Probably because I think they are useless or just ugly. Data is updated on a more or less regular basis, about one time per week. So no live feed.
     </p>
 
-    <p class="section-label">$ python export_ops_report_data.py</p>
+    <p><b>Heat Pump Data</b></p>
 
     <div class="grid">
 
       <div class="card" id="card-defrost-temp">
         <div class="card-head">
-          <span class="card-name">DEFROST/TEMP<span class="dim">(1)</span></span>
+          <span class="card-name">DEFROST/TEMP<span class="dim"></span></span>
           <span class="card-unit">cycles</span>
         </div>
+        
         <p class="card-desc">Defrost cycle count binned by outdoor temperature.</p>
         <div class="chart-wrap"></div>
         <div class="stats">
@@ -45,7 +45,7 @@
 
       <div class="card" id="card-defrost-rh">
         <div class="card-head">
-          <span class="card-name">DEFROST/RH<span class="dim">(1)</span></span>
+          <span class="card-name">DEFROST/RH<span class="dim"></span></span>
           <span class="card-unit">cycles</span>
         </div>
         <p class="card-desc">Defrost cycle count binned by relative humidity.</p>
@@ -59,7 +59,7 @@
 
       <div class="card" id="card-rpm">
         <div class="card-head">
-          <span class="card-name">RPM/TEMP<span class="dim">(1)</span></span>
+          <span class="card-name">RPM/TEMP<span class="dim"></span></span>
           <span class="card-unit">RPM</span>
         </div>
         <p class="card-desc">Average compressor RPM binned by outdoor temperature.</p>
@@ -71,9 +71,9 @@
         </div>
       </div>
 
-      <div class="card card-wide" id="card-defrost-map">
+      <div class="card" id="card-defrost-map">
         <div class="card-head">
-          <span class="card-name">DEFROST MAP<span class="dim">(1)</span></span>
+          <span class="card-name">DEFROST MAP<span class="dim"></span></span>
           <span class="card-unit">temp × RH</span>
         </div>
         <p class="card-desc">Defrost cycle density across temperature and relative humidity.</p>
@@ -81,7 +81,7 @@
         <div class="stats">
           <div class="stat"><div class="stat-label">Total</div><div class="stat-value" data-stat="total">—</div></div>
           <div class="stat"><div class="stat-label">Peak cell</div><div class="stat-value" data-stat="peak-bin">—</div></div>
-          <div class="stat"><div class="stat-label">Peak count</div><div class="stat-value" data-stat="peak-val">—</div></div>
+          <div class="stat"><div class="stat-label">Max count</div><div class="stat-value" data-stat="peak-val">—</div></div>
         </div>
       </div>
 
