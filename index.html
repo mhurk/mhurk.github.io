@@ -21,7 +21,7 @@
 
     <p class="bio">
       <b>$ cat about.txt</b><br>
-      This page shows some graphs from my home automation system. Sometimes new graphs will be added and sometimes older ones will be removed. Probably because I think they are useless or just ugly. Data is updated on a more or less regular basis, about one time per week. No live feed.
+      This page shows some graphs from my home energy systems, heatpump and battery. Sometimes new graphs will be added and sometimes older ones will be removed. Probably because I think they are useless or just ugly. Data is updated on a more or less regular basis, about one time per week. No live feed.
     </p>
 
     <p><b>Heat Pump Data</b></p>
@@ -82,6 +82,26 @@
           <div class="stat"><div class="stat-label">Total</div><div class="stat-value" data-stat="total">—</div></div>
           <div class="stat"><div class="stat-label">Peak cell</div><div class="stat-value" data-stat="peak-bin">—</div></div>
           <div class="stat"><div class="stat-label">Max count</div><div class="stat-value" data-stat="peak-val">—</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <p><b>Home battery data</b></p>
+
+    <div class="grid">
+
+      <div class="card card-wide" id="card-battery-heatmap">
+        <div class="card-head">
+          <span class="card-name">BATTERY SOC<span class="dim"></span></span>
+          <span class="card-unit">% by hour</span>
+        </div>
+        <p class="card-desc">State of charge by hour and date — mean per hour.</p>
+        <div class="chart-wrap"></div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Latest</div><div class="stat-value" data-stat="latest">—</div></div>
+          <div class="stat"><div class="stat-label">Min</div><div class="stat-value" data-stat="min">—</div></div>
+          <div class="stat"><div class="stat-label">Max</div><div class="stat-value" data-stat="max">—</div></div>
         </div>
       </div>
 

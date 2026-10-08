@@ -32,6 +32,13 @@ OPS_CHART_SNAPSHOTS = {
     "rpm_by_temp": "compressor_rpm.json",
 }
 
+# Sibling project for the home battery. It has no export-to-JSON step of its
+# own (sizing_report.html bakes the heatmap straight into inline SVG), so this
+# reuses its sizing.load() — same hourly-mean-SoC-by-(date, hour) aggregation
+# its own report charts — rather than re-deriving the local-time bucketing.
+ALPHAESS_SRC = Path(r"D:\Projects\AlphaESS_history\src")
+ALPHAESS_DB = Path(r"D:\Projects\AlphaESS_history\data\alphaess.db")
+
 
 def sync_ops_charts() -> list[str]:
     """Republish the defrost/compressor-RPM characterization charts.
@@ -54,6 +61,36 @@ def sync_ops_charts() -> list[str]:
     return written
 
 
+def sync_battery_heatmap() -> list[str]:
+    """Republish the battery state-of-charge heatmap (hour x date).
+
+    Calls the sibling AlphaESS_history project's own sizing.load() against
+    its data/alphaess.db, then republishes just the heatmap (not the
+    full/empty-day stats sizing_report.html also computes).
+    """
+    if not ALPHAESS_DB.exists() or not ALPHAESS_SRC.exists():
+        print(f"skipping battery heatmap: {ALPHAESS_DB} or {ALPHAESS_SRC} not found", file=sys.stderr)
+        return []
+
+    sys.path.insert(0, str(ALPHAESS_SRC))
+    import sqlite3
+    from alphaess_history import sizing  # type: ignore
+
+    conn = sqlite3.connect(ALPHAESS_DB)
+    try:
+        _, heatmap = sizing.load(conn)
+    finally:
+        conn.close()
+
+    cells = [
+        {"date": d.isoformat(), "hour": h, "soc": round(v, 1)}
+        for (d, h), v in sorted(heatmap.items())
+    ]
+    path = DATA_DIR / "battery_heatmap.json"
+    path.write_text(json.dumps(cells, indent=2) + "\n", encoding="utf-8")
+    return ["data/battery_heatmap.json"]
+
+
 def git(*args: str) -> None:
     subprocess.run(["git", *args], cwd=REPO_ROOT, check=True)
 
@@ -61,6 +98,7 @@ def git(*args: str) -> None:
 def main() -> int:
     today = date.today().isoformat()
     synced = sync_ops_charts()
+    synced.extend(sync_battery_heatmap())
 
     # Stage everything, not just the data files — picks up any other edits
     # (index.html, scripts, etc.) sitting in the working tree.

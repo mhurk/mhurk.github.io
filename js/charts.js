@@ -402,6 +402,132 @@
     card.querySelector('[data-stat="peak-val"]').textContent = peak.count;
   }
 
+  function shortDate(iso){
+    var d = new Date(iso+"T00:00:00");
+    var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return months[d.getMonth()] + " " + String(d.getDate()).padStart(2,"0");
+  }
+
+  function socColor(soc){
+    var t = Math.max(0, Math.min(1, soc/100));
+    var r = Math.round(17 + (210-17)*t);
+    var g = Math.round(20 + (153-20)*t);
+    var b = Math.round(18 + (34-18)*t);
+    return "rgb("+r+","+g+","+b+")";
+  }
+
+  function buildBatteryHeatmap(cells){
+    var card = document.getElementById("card-battery-heatmap");
+    var wrap = card.querySelector(".chart-wrap");
+
+    var dates = Array.from(new Set(cells.map(function(c){ return c.date; }))).sort();
+    var rows = dates.length;
+    var cols = 24;
+
+    var lookup = {};
+    cells.forEach(function(c){ lookup[c.date+"|"+c.hour] = c.soc; });
+
+    var W=600, PAD_L=42, PAD_R=8, TOP_H=16, cellH=4;
+    var GRID_H = rows*cellH;
+    var LEGEND_GAP=16, LEGEND_H=8, LEGEND_LABEL_H=20, BOTTOM_PAD=8;
+    var H = TOP_H + GRID_H + LEGEND_GAP + LEGEND_H + LEGEND_LABEL_H + BOTTOM_PAD;
+    var gridW = W-PAD_L-PAD_R;
+    var cellW = gridW/cols;
+    var legendY = TOP_H+GRID_H+LEGEND_GAP;
+    var legendW = gridW*0.42;
+
+    var svgns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgns,"svg");
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    svg.setAttribute("preserveAspectRatio","none");
+
+    var defs = document.createElementNS(svgns,"defs");
+    var legendGrad = document.createElementNS(svgns,"linearGradient");
+    legendGrad.setAttribute("id","legend-grad-soc");
+    legendGrad.setAttribute("x1","0%"); legendGrad.setAttribute("y1","0%");
+    legendGrad.setAttribute("x2","100%"); legendGrad.setAttribute("y2","0%");
+    var lg1 = document.createElementNS(svgns,"stop"); lg1.setAttribute("offset","0%"); lg1.setAttribute("stop-color", socColor(0));
+    var lg2 = document.createElementNS(svgns,"stop"); lg2.setAttribute("offset","100%"); lg2.setAttribute("stop-color", socColor(100));
+    legendGrad.appendChild(lg1); legendGrad.appendChild(lg2);
+    defs.appendChild(legendGrad);
+    svg.appendChild(defs);
+
+    [0,3,6,9,12,15,18,21].forEach(function(h){
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","xtick");
+      txt.setAttribute("x", PAD_L+h*cellW+cellW/2);
+      txt.setAttribute("y", 10);
+      txt.setAttribute("text-anchor","middle");
+      txt.textContent = String(h).padStart(2,"0");
+      svg.appendChild(txt);
+    });
+
+    var tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+
+    dates.forEach(function(dt,ri){
+      for (var h=0; h<24; h++){
+        var soc = lookup[dt+"|"+h];
+        if (soc === undefined) continue;
+        var x = PAD_L+h*cellW, y = TOP_H+ri*cellH;
+        var rect = document.createElementNS(svgns,"rect");
+        rect.setAttribute("x",x); rect.setAttribute("y",y);
+        rect.setAttribute("width",cellW); rect.setAttribute("height",cellH);
+        rect.setAttribute("fill", socColor(soc));
+        svg.appendChild(rect);
+
+        rect.addEventListener("mouseenter", function(dt,h,soc,x,y){
+          return function(){
+            var rectBox = svg.getBoundingClientRect();
+            var scale = rectBox.width / W;
+            tooltip.innerHTML = dt+' '+String(h).padStart(2,"0")+':00 &nbsp;<b>'+soc.toFixed(1)+'%</b>';
+            tooltip.style.left = ((x+cellW/2)*scale)+"px";
+            tooltip.style.top = (y*scale)+"px";
+            tooltip.style.opacity = 1;
+          };
+        }(dt,h,soc,x,y));
+        rect.addEventListener("mouseleave", function(){ tooltip.style.opacity = 0; });
+      }
+
+      if (ri % 14 === 0 || ri === rows-1){
+        var label = document.createElementNS(svgns,"text");
+        label.setAttribute("class","gtick");
+        label.setAttribute("x",2);
+        label.setAttribute("y", TOP_H+ri*cellH+cellH+2);
+        label.textContent = shortDate(dt);
+        svg.appendChild(label);
+      }
+    });
+
+    var legendRect = document.createElementNS(svgns,"rect");
+    legendRect.setAttribute("x",PAD_L); legendRect.setAttribute("y",legendY);
+    legendRect.setAttribute("width",legendW); legendRect.setAttribute("height",LEGEND_H);
+    legendRect.setAttribute("fill","url(#legend-grad-soc)");
+    svg.appendChild(legendRect);
+
+    var legend0 = document.createElementNS(svgns,"text");
+    legend0.setAttribute("class","gtick");
+    legend0.setAttribute("x",PAD_L); legend0.setAttribute("y",legendY+20);
+    legend0.textContent = "0%";
+    svg.appendChild(legend0);
+
+    var legendMax = document.createElementNS(svgns,"text");
+    legendMax.setAttribute("class","gtick");
+    legendMax.setAttribute("x",PAD_L+legendW); legendMax.setAttribute("y",legendY+20);
+    legendMax.setAttribute("text-anchor","end");
+    legendMax.textContent = "100%";
+    svg.appendChild(legendMax);
+
+    wrap.appendChild(svg);
+    wrap.appendChild(tooltip);
+
+    var socs = cells.map(function(c){ return c.soc; });
+    var latest = cells[cells.length-1].soc;
+    card.querySelector('[data-stat="latest"]').textContent = latest.toFixed(1)+"%";
+    card.querySelector('[data-stat="min"]').textContent = Math.min.apply(null,socs).toFixed(1)+"%";
+    card.querySelector('[data-stat="max"]').textContent = Math.max.apply(null,socs).toFixed(1)+"%";
+  }
+
   fetch("data/defrost_vs_temp.json").then(function(r){ return r.json(); })
     .then(function(d){ buildBarChart("defrostTemp", d); })
     .catch(function(err){ console.error("failed to load defrost_vs_temp.json", err); });
@@ -417,4 +543,8 @@
   fetch("data/defrost_heatmap.json").then(function(r){ return r.json(); })
     .then(function(d){ buildHeatmap(d); })
     .catch(function(err){ console.error("failed to load defrost_heatmap.json", err); });
+
+  fetch("data/battery_heatmap.json").then(function(r){ return r.json(); })
+    .then(function(d){ buildBatteryHeatmap(d); })
+    .catch(function(err){ console.error("failed to load battery_heatmap.json", err); });
 })();
