@@ -1,362 +1,433 @@
-
-
-<link rel="stylesheet" href="/css/style.css">
-<script src="/js/toggle-dark-mode.js" defer></script>
-
-
-<!DOCTYPE html>
-
-<html lang="en" itemscope itemtype="http://schema.org/WebPage">
-
-
-  <head>
-    
-
-  <meta charset="utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-
- 
-
-
-  <script type="application/ld+json">
-{
-    "@context": "http://schema.org",
-    "@type": "WebSite",
-    "name": "mhurk",
-    
-    "url": "https:\/\/mhurk.github.io\/"
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mhurk</title>
+<meta name="description" content="Heat pump, battery, and grid energy, tracked weekly.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<style>
+/* layout: terminal window chrome over a single-column feed; three man-page-style
+   cards hold weekly line charts, each a self-contained SVG + hover readout */
+:root{
+  --bg:        #0a0a0a;
+  --surface:   #111412;
+  --border:    rgba(255,255,255,0.09);
+  --ink-1:     #e8e9e4;
+  --ink-2:     #9aa49a;
+  --ink-3:     #5c655c;
+  --weheat:    #58a6ff;
+  --battery:   #d29922;
+  --energy:    #3fb950;
+  --grid-line: rgba(255,255,255,0.07);
+  color-scheme: dark;
 }
-</script><script type="application/ld+json">
-{
-  "@context": "http://schema.org",
-  "@type": "Organization",
-  "name": "",
-  "url": "https:\/\/mhurk.github.io\/"
-  
-  
-  
-  
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink-1);
+  font-family:'JetBrains Mono','Cascadia Code','Fira Code',ui-monospace,Consolas,monospace;
+  padding-inline:16px;
+  padding-block:28px;
+  max-width:860px;
+  margin:0 auto;
 }
-</script>
+a{color:var(--weheat);text-decoration:none;border-bottom:1px solid rgba(88,166,255,0.35);}
+a:hover{border-bottom-color:var(--weheat);}
 
-<meta property="og:title" content="mhurk" />
-<meta property="og:url" content="https://mhurk.github.io/" />
-<meta property="og:type" content="website" />
-<meta property="og:site_name" content="mhurk" />
+.win{
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+  background:var(--surface);
+}
+.win-bar{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  background:#0d0f0d;
+}
+.dots{display:flex;gap:6px;flex:0 0 auto;}
+.dots span{width:10px;height:10px;border-radius:50%;display:block;}
+.dots span:nth-child(1){background:#ff5f56;}
+.dots span:nth-child(2){background:#ffbd2e;}
+.dots span:nth-child(3){background:#27c93f;}
+.win-path{color:var(--ink-3);font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.win-body{padding:22px clamp(14px,4vw,32px) 28px;}
 
-  <meta name="twitter:title" content="mhurk" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="generator" content="Hugo 0.136.5">
-  <link rel="alternate" href="https://mhurk.github.io/index.xml" type="application/rss+xml" title="mhurk"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css" integrity="sha384-3UiQGuEI4TTMaFmGIZumfRPtfKQ3trwQE2JgosJxCnGmQpL/lJdjpcHkaaFwHlcI" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous"><link rel="stylesheet" href="https://mhurk.github.io/css/main.css" />
-  
-  <link rel="stylesheet" href="/css/style.css">
-  <script src="/js/toggle-dark-mode.js" defer></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" /><link rel="stylesheet" href="https://mhurk.github.io/css/syntax.css" /><link rel="stylesheet" href="https://mhurk.github.io/css/codeblock.css" /><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe.min.css" integrity="sha384-h/L2W9KefUClHWaty3SLE5F/qvc4djlyR4qY3NUV5HGQBBW7stbcfff1+I/vmsHh" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/default-skin/default-skin.min.css" integrity="sha384-iD0dNku6PYSIQLyfTOpB06F2KCZJAKLOThS5HRe8b3ibhdEQ6eKsFf/EeFxdOt5R" crossorigin="anonymous">
+.prompt{color:var(--ink-2);font-size:13.5px;}
+.prompt .sigil{color:var(--energy);}
+.prompt .cmd{color:var(--ink-1);}
+.cursor{display:inline-block;width:8px;height:15px;background:var(--ink-1);vertical-align:-2px;animation:blink 1.1s step-end infinite;}
+@media (prefers-reduced-motion:reduce){.cursor{animation:none;opacity:1;}}
+@keyframes blink{50%{opacity:0;}}
 
-  </head>
-  <body>
-    <link rel="stylesheet" href="/css/style.css">
-<script src="/js/toggle-dark-mode.js" defer></script>
+h1{
+  font-size:clamp(22px,4vw,30px);
+  margin:10px 0 4px;
+  letter-spacing:-0.01em;
+  text-wrap:balance;
+}
+.tagline{color:var(--ink-2);font-size:14px;margin:0 0 18px;line-height:1.6;max-width:62ch;}
 
-<nav class="navbar navbar-default navbar-fixed-top navbar-custom">
-  <div class="container-fluid">
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#main-navbar">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" href="https://mhurk.github.io/">mhurk</a>
-    </div>
+.bio{
+  font-size:13.5px;
+  line-height:1.75;
+  color:var(--ink-2);
+  border-left:2px solid var(--border);
+  padding-left:14px;
+  margin:0 0 26px;
+  max-width:68ch;
+}
+.bio b{color:var(--ink-1);font-weight:600;}
 
-    <div class="collapse navbar-collapse" id="main-navbar">
-      <ul class="nav navbar-nav navbar-right">
-        
-          
-            <li>
-              <a title="Home" href="/">Home</a>
-            </li>
-          
-        
-          
-            <li>
-              <a title="Marathon" href="/marathon/">Marathon</a>
-            </li>
-          
-        
-          
-            <li>
-              <a title="About" href="/about/">About</a>
-            </li>
-          
-        
+.section-label{
+  font-size:11.5px;
+  letter-spacing:0.12em;
+  color:var(--ink-3);
+  margin:0 0 14px;
+  text-transform:uppercase;
+}
 
-        <div class="menu-bar">
-          <label class="dark-mode-toggle">
-            <input type="checkbox" id="dark-mode-toggle">
-            <span class="slider"></span>
-          </label>
-        </div>
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:16px;
+  margin-bottom:28px;
+}
 
+.card{
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:16px 16px 14px;
+  background:#0d0f0d;
+  min-width:0;
+}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:2px;}
+.card-name{font-size:13px;font-weight:600;letter-spacing:0.02em;}
+.card-name .dim{color:var(--ink-3);font-weight:400;}
+.card-unit{font-size:11px;color:var(--ink-3);white-space:nowrap;}
+.card-desc{font-size:11.5px;color:var(--ink-3);margin:0 0 10px;line-height:1.5;}
 
-        
+.chart-wrap{position:relative;min-width:0;}
+.chart-wrap svg{display:block;width:100%;height:auto;overflow:visible;}
+.gline{stroke:var(--grid-line);stroke-width:1;}
+.gtick{font-size:9.5px;fill:var(--ink-3);font-family:inherit;}
+.xtick{font-size:9.5px;fill:var(--ink-3);font-family:inherit;}
+.area{opacity:0.16;}
+.line-path{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.endpoint{stroke:var(--surface);stroke-width:2;}
+.hoverline{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 3;opacity:0;}
+.hoverpt{stroke:var(--surface);stroke-width:2;opacity:0;}
+.hit{fill:transparent;cursor:crosshair;}
 
-        
-      </ul>
-    </div>
+.tooltip{
+  position:absolute;
+  pointer-events:none;
+  background:#1a1d1a;
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:5px 8px;
+  font-size:11px;
+  line-height:1.5;
+  color:var(--ink-1);
+  white-space:nowrap;
+  opacity:0;
+  transform:translate(-50%,-100%);
+  top:0;left:0;
+  box-shadow:0 4px 14px rgba(0,0,0,0.5);
+}
+.tooltip .tt-date{color:var(--ink-3);}
 
-    
+.stats{display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.stat{min-width:0;}
+.stat-label{font-size:10px;color:var(--ink-3);letter-spacing:0.06em;text-transform:uppercase;}
+.stat-value{font-size:15px;font-variant-numeric:tabular-nums;margin-top:2px;}
+.stat-value .arrow{font-size:11px;color:var(--ink-3);margin-left:2px;}
 
+.note{
+  font-size:11.5px;
+  color:var(--ink-3);
+  background:rgba(210,153,34,0.08);
+  border:1px solid rgba(210,153,34,0.25);
+  border-radius:4px;
+  padding:8px 11px;
+  margin-bottom:26px;
+  line-height:1.6;
+}
+.note b{color:var(--battery);font-weight:600;}
+
+footer{
+  border-top:1px solid var(--border);
+  padding-top:16px;
+  font-size:11.5px;
+  color:var(--ink-3);
+  line-height:1.9;
+}
+footer .k{color:var(--ink-2);}
+</style>
+</head>
+<body>
+
+<div class="win">
+  <div class="win-bar">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <div class="win-path">visitor@mhurk:~ — github pages</div>
   </div>
-</nav>
+  <div class="win-body">
+    <div class="prompt">visitor@mhurk:~$ <span class="cmd">whoami</span> <span class="cursor"></span></div>
+    <h1>mhurk</h1>
+    <p class="tagline">Home energy tinkerer. Heat pump, solar, and a battery, instrumented and reported on once a week.</p>
 
-
-
-
-    
-
-
-<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
-
-<div class="pswp__bg"></div>
-
-<div class="pswp__scroll-wrap">
-    
-    <div class="pswp__container">
-      <div class="pswp__item"></div>
-      <div class="pswp__item"></div>
-      <div class="pswp__item"></div>
-    </div>
-    
-    <div class="pswp__ui pswp__ui--hidden">
-    <div class="pswp__top-bar">
-      
-      <div class="pswp__counter"></div>
-      <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
-      <button class="pswp__button pswp__button--share" title="Share"></button>
-      <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
-      <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
-      
-      
-      <div class="pswp__preloader">
-        <div class="pswp__preloader__icn">
-          <div class="pswp__preloader__cut">
-            <div class="pswp__preloader__donut"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
-      <div class="pswp__share-tooltip"></div>
-    </div>
-    <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
-    </button>
-    <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
-    </button>
-    <div class="pswp__caption">
-      <div class="pswp__caption__center"></div>
-    </div>
-    </div>
-    </div>
-</div>
-
-
-  
-  
-  
-
-
-
-
-
-
-  
-
-  <header class="header-section ">
-    
-    
-    <div class="intro-header no-img">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-            <div class="page-heading">
-              
-                <h1>mhurk</h1>
-              
-              
-                <hr class="small">
-              
-              
-              
-
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-
-
-
-
-  
-  </header>
-
-
-    
-  <div role="main" class="container">
-    <div class="row">
-      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-        
-
-        <div class="posts-list">
-          
-          
-            <article class="post-preview">
-    <a href="https://mhurk.github.io/posts/my-test-post/">
-        <h2 class="post-title">This is a test post</h2>
-        
-
-        
-    </a>
-
-    <p class="post-meta">
-        <span class="post-meta">
-  
-  
-  <i class="fas fa-calendar"></i>&nbsp;Posted on November 11, 2024
-  
-  
-  
-  
-    
-      &nbsp;|&nbsp;<i class="fas fa-user"></i>&nbsp;
-    
-  
-  
-</span>
-
-
+    <p class="bio">
+      <b>$ cat about.txt</b><br>
+      This page tracks three numbers from the house: how hard the <b>heat pump</b> is working,
+      how charged the <b>battery</b> stays, and how much is pulled from the <b>grid</b>.
+      A script on my own machine refreshes the data weekly — nothing here calls out to a server.
     </p>
-    
-    <div class="post-featured-image">
-      <img src="/posts/my-test-post/image1.webp">
-    </div>
-  
 
+    <p class="section-label">$ ls ./dashboards -la</p>
 
-    <div class="post-entry">
-        
-        <p>This is some text.
-&ldquo;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.&rdquo;</p>
-        <a href="https://mhurk.github.io/posts/my-test-post/" class="post-read-more">[Read More]</a>
-        
-    </div>
+    <div class="grid">
 
-    
-
-</article>
-
-
-          
+      <div class="card" id="card-weheat">
+        <div class="card-head">
+          <span class="card-name">WEHEAT<span class="dim">(1)</span></span>
+          <span class="card-unit">COP</span>
         </div>
-
-        
+        <p class="card-desc">Heat pump coefficient of performance — 7-day average.</p>
+        <div class="chart-wrap"></div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Latest</div><div class="stat-value" data-stat="latest">—</div></div>
+          <div class="stat"><div class="stat-label">10-wk avg</div><div class="stat-value" data-stat="avg">—</div></div>
+          <div class="stat"><div class="stat-label">Trend</div><div class="stat-value" data-stat="trend">—</div></div>
+        </div>
       </div>
-    </div>
-  </div>
 
-      
-    <div class="page-meta">
-  
-  
-  
+      <div class="card" id="card-battery">
+        <div class="card-head">
+          <span class="card-name">BATTERY<span class="dim">(1)</span></span>
+          <span class="card-unit">% SoC</span>
+        </div>
+        <p class="card-desc">Average state of charge — 7-day average.</p>
+        <div class="chart-wrap"></div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Latest</div><div class="stat-value" data-stat="latest">—</div></div>
+          <div class="stat"><div class="stat-label">10-wk avg</div><div class="stat-value" data-stat="avg">—</div></div>
+          <div class="stat"><div class="stat-label">Trend</div><div class="stat-value" data-stat="trend">—</div></div>
+        </div>
+      </div>
+
+      <div class="card" id="card-energy">
+        <div class="card-head">
+          <span class="card-name">ENERGY<span class="dim">(1)</span></span>
+          <span class="card-unit">kWh/wk</span>
+        </div>
+        <p class="card-desc">Grid import — total per week.</p>
+        <div class="chart-wrap"></div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Latest</div><div class="stat-value" data-stat="latest">—</div></div>
+          <div class="stat"><div class="stat-label">10-wk avg</div><div class="stat-value" data-stat="avg">—</div></div>
+          <div class="stat"><div class="stat-label">Trend</div><div class="stat-value" data-stat="trend">—</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="note">
+      <b>#</b> seed data — these three series are placeholders standing in for the real
+      WeHeat / battery / grid feeds, which are still being wired up. Layout and refresh
+      behavior are final; <code>data/*.json</code> is what the weekly script will overwrite.
+    </p>
+
+    <footer>
+      <div><span class="k">$</span> schedule</div>
+      <div>0 8 * * 1  sync-dashboards.py&nbsp;&nbsp;<span class="k"># Windows Task Scheduler, runs weekly from home, pushes data/*.json</span></div>
+      <div style="margin-top:8px;"><span class="k">source</span> <a href="https://github.com/mhurk/mhurk.github.io" target="_blank" rel="noopener">github.com/mhurk/mhurk.github.io</a></div>
+    </footer>
+  </div>
 </div>
 
+<script>
+(function(){
+  var CARDS = {
+    weheat:  { id:"card-weheat",  file:"data/weheat.json",  color:"var(--weheat)",  fmt:function(v){return v.toFixed(1);},        unit:"",    trendUnit:" COP" },
+    battery: { id:"card-battery", file:"data/battery.json", color:"var(--battery)", fmt:function(v){return Math.round(v)+"%";},  unit:"%",   trendUnit:"pt" },
+    energy:  { id:"card-energy", file:"data/energy.json",  color:"var(--energy)",  fmt:function(v){return Math.round(v);},      unit:" kWh",trendUnit:" kWh" }
+  };
 
-  <footer>
-  
+  var W=600,H=200,PAD_L=34,PAD_R=8,PAD_T=12,PAD_B=22;
+  var plotW=W-PAD_L-PAD_R, plotH=H-PAD_T-PAD_B;
 
-        <div class="social-links text-center">
-        
-        
-          <a href="https://github.com/mhurk" target="_blank" rel="noopener noreferrer">
-            <i class="fab fa-github"></i>
-          </a>
-        
-        
-          <a href="https://linkedin.com/in/maykvandenhurk" target="_blank" rel="noopener noreferrer">
-            <i class="fab fa-linkedin"></i>
-          </a>
-        
-        
-          <a href="https://www.strava.com/athletes/1899597" target="_blank" rel="noopener noreferrer">
-            <i class="fab fa-strava"></i>
-          </a>
-        
-        
-          <a href="https://orcid.org/my-orcid?orcid=0009-0001-2812-4369" target="_blank" rel="noopener noreferrer">
-            <i class="fab fa-orcid"></i>
-          </a>
-        
+  function shortDate(iso){
+    var d = new Date(iso+"T00:00:00");
+    var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return months[d.getMonth()] + " " + String(d.getDate()).padStart(2,"0");
+  }
 
-      </div>
+  function renderStats(card, points, cfg){
+    var vals = points.map(function(p){return p.value;});
+    var n = vals.length;
+    var latest = vals[n-1];
+    var avg = vals.reduce(function(a,b){return a+b;},0)/n;
+    var delta = vals[n-1]-vals[0];
+    var arrow = delta>0 ? "▲" : (delta<0 ? "▼" : "—");
 
+    card.querySelector('[data-stat="latest"]').textContent = cfg.fmt(latest);
+    card.querySelector('[data-stat="avg"]').innerHTML = cfg.fmt(avg);
+    card.querySelector('[data-stat="trend"]').innerHTML =
+      arrow + ' <span class="arrow">' + Math.abs(delta).toFixed(cfg.unit==="%"||cfg.unit===""?1:0) + cfg.trendUnit + ' / ' + (n-1) + 'wk</span>';
+  }
 
-      <div class="container">
-    
-    <div class="row">
-      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-        <ul class="list-inline text-center footer-links">
-          
-          
-        </ul>
-        <p class="credits copyright text-muted">
-          
+  function build(key, points){
+    var cfg = CARDS[key];
+    var card = document.getElementById(cfg.id);
+    var wrap = card.querySelector(".chart-wrap");
+    var vals = points.map(function(p){return p.value;});
+    var labels = points.map(function(p){return shortDate(p.date);});
+    var n = vals.length;
+    var min = Math.min.apply(null,vals), max = Math.max.apply(null,vals);
+    if (min===max){ min-=1; max+=1; }
+    var pad = (max-min)*0.12;
+    min -= pad; max += pad;
 
-          &nbsp;&bull;&nbsp;&copy;
-          
-            2024
-          
+    function X(i){ return PAD_L + (i/(n-1))*plotW; }
+    function Y(v){ return PAD_T + (1-(v-min)/(max-min))*plotH; }
 
-          
-            &nbsp;&bull;&nbsp;
-            <a href="https://mhurk.github.io/">mhurk</a>
-          
-        </p>
-        
-        <p class="credits theme-by text-muted">
-          <a href="https://gohugo.io">Hugo v0.136.5</a> powered &nbsp;&bull;&nbsp; Theme <a href="https://github.com/halogenica/beautifulhugo">Beautiful Hugo</a> adapted from <a href="https://deanattali.com/beautiful-jekyll/">Beautiful Jekyll</a>
-          
-        </p>
-      </div>
-    </div>
-  </div>
-</footer><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.js" integrity="sha384-G0zcxDFp5LWZtDuRMnBkk3EphCK1lhEf4UEyEM693ka574TZGwo4IWwS6QLzM/2t" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
-<script src="https://code.jquery.com/jquery-3.7.0.slim.min.js" integrity="sha384-w5y/xIeYixWvfM+A1cEbmHPURnvyqmVg5eVENruEdDjcyRLUSNej7512JQGspFUr" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
+    var svgns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgns,"svg");
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    svg.setAttribute("preserveAspectRatio","none");
 
-<script src="https://mhurk.github.io/js/main.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe.min.js" integrity="sha384-QELNnmcmU8IR9ZAykt67vGr9/rZJdHbiWi64V88fCPaOohUlHCqUD/unNN0BXSqy" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.2/photoswipe-ui-default.min.js" integrity="sha384-m67o7SkQ1ALzKZIFh4CiTA8tmadaujiTa9Vu+nqPSwDOqHrDmxLezTdFln8077+q" crossorigin="anonymous"></script><script src="https://mhurk.github.io/js/load-photoswipe.js"></script>
+    var defs = document.createElementNS(svgns,"defs");
+    var grad = document.createElementNS(svgns,"linearGradient");
+    var gid = "grad-"+key;
+    grad.setAttribute("id",gid);
+    grad.setAttribute("x1","0"); grad.setAttribute("y1","0");
+    grad.setAttribute("x2","0"); grad.setAttribute("y2","1");
+    var stop1 = document.createElementNS(svgns,"stop");
+    stop1.setAttribute("offset","0%"); stop1.setAttribute("stop-color",cfg.color);
+    var stop2 = document.createElementNS(svgns,"stop");
+    stop2.setAttribute("offset","100%"); stop2.setAttribute("stop-color",cfg.color); stop2.setAttribute("stop-opacity","0");
+    grad.appendChild(stop1); grad.appendChild(stop2);
+    defs.appendChild(grad);
+    svg.appendChild(defs);
 
+    for (var g=0; g<4; g++){
+      var frac = g/3;
+      var v = min + frac*(max-min);
+      var y = Y(v);
+      var line = document.createElementNS(svgns,"line");
+      line.setAttribute("class","gline");
+      line.setAttribute("x1",PAD_L); line.setAttribute("x2",W-PAD_R);
+      line.setAttribute("y1",y); line.setAttribute("y2",y);
+      svg.appendChild(line);
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","gtick");
+      txt.setAttribute("x",2); txt.setAttribute("y",y+3);
+      txt.textContent = cfg.fmt(v);
+      svg.appendChild(txt);
+    }
 
+    [0, Math.round((n-1)/2), n-1].forEach(function(i){
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","xtick");
+      txt.setAttribute("x",X(i));
+      txt.setAttribute("y",H-4);
+      txt.setAttribute("text-anchor", i===0 ? "start" : (i===n-1 ? "end" : "middle"));
+      txt.textContent = labels[i];
+      svg.appendChild(txt);
+    });
 
+    var d = "M"+X(0)+","+Y(vals[0]);
+    for (var i=1;i<n;i++){ d += " L"+X(i)+","+Y(vals[i]); }
+    var areaD = d + " L"+X(n-1)+","+(PAD_T+plotH)+" L"+X(0)+","+(PAD_T+plotH)+" Z";
+    var area = document.createElementNS(svgns,"path");
+    area.setAttribute("class","area");
+    area.setAttribute("d",areaD);
+    area.setAttribute("fill","url(#"+gid+")");
+    svg.appendChild(area);
 
+    var linePath = document.createElementNS(svgns,"path");
+    linePath.setAttribute("class","line-path");
+    linePath.setAttribute("d",d);
+    linePath.setAttribute("stroke",cfg.color);
+    svg.appendChild(linePath);
 
+    var endC = document.createElementNS(svgns,"circle");
+    endC.setAttribute("class","endpoint");
+    endC.setAttribute("cx",X(n-1)); endC.setAttribute("cy",Y(vals[n-1])); endC.setAttribute("r",4);
+    endC.setAttribute("fill",cfg.color);
+    svg.appendChild(endC);
 
+    var hoverLine = document.createElementNS(svgns,"line");
+    hoverLine.setAttribute("class","hoverline");
+    hoverLine.setAttribute("y1",PAD_T); hoverLine.setAttribute("y2",PAD_T+plotH);
+    svg.appendChild(hoverLine);
 
+    var hoverPt = document.createElementNS(svgns,"circle");
+    hoverPt.setAttribute("class","hoverpt");
+    hoverPt.setAttribute("r",4.5);
+    hoverPt.setAttribute("fill",cfg.color);
+    svg.appendChild(hoverPt);
 
+    var hit = document.createElementNS(svgns,"rect");
+    hit.setAttribute("class","hit");
+    hit.setAttribute("x",PAD_L); hit.setAttribute("y",0);
+    hit.setAttribute("width",plotW); hit.setAttribute("height",H);
+    svg.appendChild(hit);
 
-  
+    wrap.appendChild(svg);
 
-    
-  </body>
+    var tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+    wrap.appendChild(tooltip);
+
+    function nearestIndex(clientX){
+      var rect = svg.getBoundingClientRect();
+      var xSvg = ((clientX - rect.left) / rect.width) * W;
+      var i = Math.round(((xSvg - PAD_L) / plotW) * (n-1));
+      return Math.max(0, Math.min(n-1, i));
+    }
+
+    hit.addEventListener("mousemove", function(e){
+      var i = nearestIndex(e.clientX);
+      var rect = svg.getBoundingClientRect();
+      var scale = rect.width / W;
+      var px = X(i) * scale;
+      var py = Y(vals[i]) * scale;
+
+      hoverLine.setAttribute("x1",X(i)); hoverLine.setAttribute("x2",X(i));
+      hoverLine.style.opacity = 1;
+      hoverPt.setAttribute("cx",X(i)); hoverPt.setAttribute("cy",Y(vals[i]));
+      hoverPt.style.opacity = 1;
+
+      tooltip.innerHTML = '<span class="tt-date">'+labels[i]+'</span> &nbsp;'+cfg.fmt(vals[i])+cfg.unit;
+      tooltip.style.left = px+"px";
+      tooltip.style.top = (py-10)+"px";
+      tooltip.style.opacity = 1;
+    });
+
+    hit.addEventListener("mouseleave", function(){
+      hoverLine.style.opacity = 0;
+      hoverPt.style.opacity = 0;
+      tooltip.style.opacity = 0;
+    });
+
+    renderStats(card, points, cfg);
+  }
+
+  Object.keys(CARDS).forEach(function(key){
+    fetch(CARDS[key].file)
+      .then(function(r){ return r.json(); })
+      .then(function(points){ build(key, points); })
+      .catch(function(err){ console.error("failed to load", CARDS[key].file, err); });
+  });
+})();
+</script>
+</body>
 </html>
-
