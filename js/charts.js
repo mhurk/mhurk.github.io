@@ -303,7 +303,7 @@
     var cellW = gridW/cols, cellH = GRID_H/rows;
     var xLabelY = PAD_T+GRID_H+14;
     var legendY = PAD_T+GRID_H+26;
-    var legendW = gridW*0.42;
+    var legendW = gridW;
 
     var svgns = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(svgns,"svg");
