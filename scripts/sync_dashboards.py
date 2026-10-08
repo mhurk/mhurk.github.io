@@ -17,6 +17,21 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data"
 MAX_POINTS = 52  # keep roughly a year of weekly points
 
+# Sibling project that already computes these as binned aggregates from the
+# heat pump's own history (data/weheat.db) — see its export_ops_report_data.py.
+WEHEAT_OPS_REPORT = Path(r"D:\Projects\Weheat_history\data\ops_report_data.json")
+
+# ops_report_data.json key -> homepage data file. Each one is overwritten
+# wholesale (a binned snapshot, not a weekly time series), and deliberately
+# excludes that file's `headline.weather_location` (approximate home
+# coordinates) — only the binned aggregates get published.
+OPS_CHART_SNAPSHOTS = {
+    "defrost_by_temp": "defrost_vs_temp.json",
+    "defrost_by_humidity": "defrost_vs_humidity.json",
+    "defrost_heatmap": "defrost_heatmap.json",
+    "rpm_by_temp": "compressor_rpm.json",
+}
+
 
 def fetch_weheat_cop() -> float:
     """Return this week's average heat pump coefficient of performance.
@@ -60,6 +75,27 @@ def append_point(path: Path, value: float, today: str) -> None:
     path.write_text(json.dumps(points, indent=2) + "\n", encoding="utf-8")
 
 
+def sync_ops_charts() -> list[str]:
+    """Republish the defrost/compressor-RPM characterization charts.
+
+    Reads the already-computed binned aggregates from the sibling
+    Weheat_history project's ops report export. Does not trigger that
+    project's own data refresh — run its update_weheat_data.bat first if you
+    want fresher numbers.
+    """
+    if not WEHEAT_OPS_REPORT.exists():
+        print(f"skipping ops charts: {WEHEAT_OPS_REPORT} not found", file=sys.stderr)
+        return []
+
+    ops = json.loads(WEHEAT_OPS_REPORT.read_text(encoding="utf-8"))
+    written = []
+    for ops_key, filename in OPS_CHART_SNAPSHOTS.items():
+        path = DATA_DIR / filename
+        path.write_text(json.dumps(ops[ops_key], indent=2) + "\n", encoding="utf-8")
+        written.append(f"data/{filename}")
+    return written
+
+
 def git(*args: str) -> None:
     subprocess.run(["git", *args], cwd=REPO_ROOT, check=True)
 
@@ -77,6 +113,8 @@ def main() -> int:
             continue
         append_point(path, value, today)
         synced.append(f"data/{filename}")
+
+    synced.extend(sync_ops_charts())
 
     # Stage everything, not just the data files — picks up any other edits
     # (index.html, scripts, etc.) sitting in the working tree.

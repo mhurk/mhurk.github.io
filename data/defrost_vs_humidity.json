@@ -1,0 +1,72 @@
+[
+  {
+    "humidity_bin": 35,
+    "cycles": 1,
+    "avg_duration_min": 1.0
+  },
+  {
+    "humidity_bin": 40,
+    "cycles": 1,
+    "avg_duration_min": 1.0
+  },
+  {
+    "humidity_bin": 45,
+    "cycles": 3,
+    "avg_duration_min": 1.67
+  },
+  {
+    "humidity_bin": 50,
+    "cycles": 1,
+    "avg_duration_min": 1.5
+  },
+  {
+    "humidity_bin": 55,
+    "cycles": 5,
+    "avg_duration_min": 4.8
+  },
+  {
+    "humidity_bin": 60,
+    "cycles": 6,
+    "avg_duration_min": 5.12
+  },
+  {
+    "humidity_bin": 65,
+    "cycles": 12,
+    "avg_duration_min": 8.06
+  },
+  {
+    "humidity_bin": 70,
+    "cycles": 31,
+    "avg_duration_min": 8.26
+  },
+  {
+    "humidity_bin": 75,
+    "cycles": 51,
+    "avg_duration_min": 8.44
+  },
+  {
+    "humidity_bin": 80,
+    "cycles": 79,
+    "avg_duration_min": 8.69
+  },
+  {
+    "humidity_bin": 85,
+    "cycles": 164,
+    "avg_duration_min": 8.87
+  },
+  {
+    "humidity_bin": 90,
+    "cycles": 257,
+    "avg_duration_min": 8.7
+  },
+  {
+    "humidity_bin": 95,
+    "cycles": 275,
+    "avg_duration_min": 8.73
+  },
+  {
+    "humidity_bin": 100,
+    "cycles": 19,
+    "avg_duration_min": 9.66
+  }
+]

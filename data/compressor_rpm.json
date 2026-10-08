@@ -1,0 +1,117 @@
+[
+  {
+    "outdoor_temp": -4.0,
+    "rpm": 2714.0,
+    "n": 44
+  },
+  {
+    "outdoor_temp": -3.0,
+    "rpm": 2398.0,
+    "n": 151
+  },
+  {
+    "outdoor_temp": -2.0,
+    "rpm": 2438.0,
+    "n": 377
+  },
+  {
+    "outdoor_temp": -1.0,
+    "rpm": 2577.0,
+    "n": 534
+  },
+  {
+    "outdoor_temp": 0.0,
+    "rpm": 2364.0,
+    "n": 1393
+  },
+  {
+    "outdoor_temp": 1.0,
+    "rpm": 2264.0,
+    "n": 1464
+  },
+  {
+    "outdoor_temp": 2.0,
+    "rpm": 2112.0,
+    "n": 1545
+  },
+  {
+    "outdoor_temp": 3.0,
+    "rpm": 1897.0,
+    "n": 1591
+  },
+  {
+    "outdoor_temp": 4.0,
+    "rpm": 1731.0,
+    "n": 1986
+  },
+  {
+    "outdoor_temp": 5.0,
+    "rpm": 1458.0,
+    "n": 1700
+  },
+  {
+    "outdoor_temp": 6.0,
+    "rpm": 1309.0,
+    "n": 1681
+  },
+  {
+    "outdoor_temp": 7.0,
+    "rpm": 1245.0,
+    "n": 1336
+  },
+  {
+    "outdoor_temp": 8.0,
+    "rpm": 1182.0,
+    "n": 1548
+  },
+  {
+    "outdoor_temp": 9.0,
+    "rpm": 1141.0,
+    "n": 1111
+  },
+  {
+    "outdoor_temp": 10.0,
+    "rpm": 1049.0,
+    "n": 1147
+  },
+  {
+    "outdoor_temp": 11.0,
+    "rpm": 1088.0,
+    "n": 679
+  },
+  {
+    "outdoor_temp": 12.0,
+    "rpm": 1153.0,
+    "n": 521
+  },
+  {
+    "outdoor_temp": 13.0,
+    "rpm": 977.0,
+    "n": 281
+  },
+  {
+    "outdoor_temp": 14.0,
+    "rpm": 1006.0,
+    "n": 182
+  },
+  {
+    "outdoor_temp": 15.0,
+    "rpm": 1129.0,
+    "n": 88
+  },
+  {
+    "outdoor_temp": 16.0,
+    "rpm": 837.0,
+    "n": 76
+  },
+  {
+    "outdoor_temp": 17.0,
+    "rpm": 738.0,
+    "n": 19
+  },
+  {
+    "outdoor_temp": 18.0,
+    "rpm": 1059.0,
+    "n": 12
+  }
+]
