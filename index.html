@@ -120,12 +120,19 @@
     var maxVal = Math.max.apply(null, data.map(function(d){ return d.cycles; }));
     if (maxVal <= 0) maxVal = 1;
 
-    var W=600,H=200,PAD_L=30,PAD_R=8,PAD_T=10,PAD_B=24;
-    var plotW=W-PAD_L-PAD_R, plotH=H-PAD_T-PAD_B;
+    var durVals = data.map(function(d){ return d.avg_duration_min; });
+    var durMin = Math.min.apply(null, durVals), durMax = Math.max.apply(null, durVals);
+    if (durMin === durMax){ durMin -= 1; durMax += 1; }
+
+    var W=600,H=230,PAD_L=30,PAD_R=8,PAD_T=10,PAD_B=22;
+    var MAIN_H=130, DUR_GAP=16, DUR_H=40;
+    var plotW=W-PAD_L-PAD_R, mainBottom=PAD_T+MAIN_H;
+    var durTop=mainBottom+DUR_GAP, durBottom=durTop+DUR_H;
     var bw = plotW/n;
 
     function barX(i){ return PAD_L + i*bw; }
-    function barY(v){ return PAD_T + (1-v/maxVal)*plotH; }
+    function barY(v){ return PAD_T + (1-v/maxVal)*MAIN_H; }
+    function durY(v){ return durTop + (1-(v-durMin)/(durMax-durMin))*DUR_H; }
 
     var svgns = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(svgns,"svg");
@@ -151,6 +158,40 @@
     var tooltip = document.createElement("div");
     tooltip.className = "tooltip";
 
+    // secondary strip: avg defrost duration per bin, own scale, de-emphasised
+    var durLabel = document.createElementNS(svgns,"text");
+    durLabel.setAttribute("class","gtick");
+    durLabel.setAttribute("x",PAD_L); durLabel.setAttribute("y",durTop-5);
+    durLabel.textContent = "avg duration (min)";
+    svg.appendChild(durLabel);
+
+    var durD = "M"+(barX(0)+bw/2)+","+durY(durVals[0]);
+    for (var i=1;i<n;i++){ durD += " L"+(barX(i)+bw/2)+","+durY(durVals[i]); }
+    var durPath = document.createElementNS(svgns,"path");
+    durPath.setAttribute("d",durD);
+    durPath.setAttribute("fill","none");
+    durPath.setAttribute("stroke","var(--ink-2)");
+    durPath.setAttribute("stroke-width","1.5");
+    svg.appendChild(durPath);
+
+    var durTickMax = document.createElementNS(svgns,"text");
+    durTickMax.setAttribute("class","gtick");
+    durTickMax.setAttribute("x",2); durTickMax.setAttribute("y",durTop+3);
+    durTickMax.textContent = durMax.toFixed(1);
+    svg.appendChild(durTickMax);
+
+    var durTickMin = document.createElementNS(svgns,"text");
+    durTickMin.setAttribute("class","gtick");
+    durTickMin.setAttribute("x",2); durTickMin.setAttribute("y",durBottom+3);
+    durTickMin.textContent = durMin.toFixed(1);
+    svg.appendChild(durTickMin);
+
+    var hoverDurPt = document.createElementNS(svgns,"circle");
+    hoverDurPt.setAttribute("class","hoverpt");
+    hoverDurPt.setAttribute("r",3);
+    hoverDurPt.setAttribute("fill","var(--ink-1)");
+    svg.appendChild(hoverDurPt);
+
     data.forEach(function(d,i){
       var y = barY(d.cycles);
       var rect = document.createElementNS(svgns,"rect");
@@ -158,7 +199,7 @@
       rect.setAttribute("x", barX(i)+bw*0.12);
       rect.setAttribute("y", y);
       rect.setAttribute("width", Math.max(bw*0.76,1));
-      rect.setAttribute("height", Math.max(PAD_T+plotH-y,0));
+      rect.setAttribute("height", Math.max(mainBottom-y,0));
       rect.setAttribute("rx",2);
       rect.setAttribute("fill", cfg.color);
       svg.appendChild(rect);
@@ -169,14 +210,18 @@
         var scale = rectBox.width / W;
         var px = (barX(i)+bw/2)*scale;
         var py = y*scale;
-        tooltip.innerHTML = cfg.xFmt(d[cfg.xKey]) + ' &nbsp;<b>' + d.cycles + '</b> cycles';
+        tooltip.innerHTML = cfg.xFmt(d[cfg.xKey]) + ' &nbsp;<b>' + d.cycles + '</b> cycles &nbsp;·&nbsp; avg <b>' + d.avg_duration_min.toFixed(1) + '</b> min';
         tooltip.style.left = px+"px";
         tooltip.style.top = (py-8)+"px";
         tooltip.style.opacity = 1;
+        hoverDurPt.setAttribute("cx", barX(i)+bw/2);
+        hoverDurPt.setAttribute("cy", durY(d.avg_duration_min));
+        hoverDurPt.style.opacity = 1;
       });
       rect.addEventListener("mouseleave", function(){
         rect.classList.remove("bar-hover");
         tooltip.style.opacity = 0;
+        hoverDurPt.style.opacity = 0;
       });
     });
 
