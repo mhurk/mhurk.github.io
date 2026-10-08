@@ -11,7 +11,7 @@ data files.
 import json
 import subprocess
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -38,6 +38,7 @@ OPS_CHART_SNAPSHOTS = {
 # its own report charts — rather than re-deriving the local-time bucketing.
 ALPHAESS_SRC = Path(r"D:\Projects\AlphaESS_history\src")
 ALPHAESS_DB = Path(r"D:\Projects\AlphaESS_history\data\alphaess.db")
+BATTERY_HEATMAP_DAYS = 60  # ~2 months — keeps this repo's copy a stable size as the source grows
 
 
 def sync_ops_charts() -> list[str]:
@@ -81,6 +82,11 @@ def sync_battery_heatmap() -> list[str]:
         _, heatmap = sizing.load(conn)
     finally:
         conn.close()
+
+    # Only publish the last ~2 months here — the source db keeps growing, but
+    # this repo's copy should stay a stable size.
+    cutoff = date.today() - timedelta(days=BATTERY_HEATMAP_DAYS)
+    heatmap = {(d, h): v for (d, h), v in heatmap.items() if d >= cutoff}
 
     cells = [
         {"date": d.isoformat(), "hour": h, "soc": round(v, 1)}

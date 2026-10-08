@@ -434,7 +434,7 @@
     var gridW = W-PAD_L-PAD_R;
     var cellW = gridW/cols;
     var legendY = TOP_H+GRID_H+LEGEND_GAP;
-    var legendW = gridW*0.42;
+    var legendW = gridW;
 
     var svgns = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(svgns,"svg");
