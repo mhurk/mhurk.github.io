@@ -76,6 +76,14 @@ h1{
 }
 .bio b{color:var(--ink-1);font-weight:600;}
 
+.info{
+  font-size:13.5px;
+  line-height:1.75;
+  color:var(--ink-2);
+  margin:0 0 26px;
+}
+.info b{color:var(--ink-1);font-weight:600;}
+
 .section-label{
   font-size:11.5px;
   letter-spacing:0.12em;

@@ -38,7 +38,7 @@ OPS_CHART_SNAPSHOTS = {
 # its own report charts — rather than re-deriving the local-time bucketing.
 ALPHAESS_SRC = Path(r"D:\Projects\AlphaESS_history\src")
 ALPHAESS_DB = Path(r"D:\Projects\AlphaESS_history\data\alphaess.db")
-BATTERY_HEATMAP_DAYS = 60  # ~2 months — keeps this repo's copy a stable size as the source grows
+BATTERY_HEATMAP_DAYS = 75  # ~3 months — keeps this repo's copy a stable size as the source grows
 
 
 def sync_ops_charts() -> list[str]:

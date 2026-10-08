@@ -522,8 +522,6 @@
     wrap.appendChild(tooltip);
 
     var socs = cells.map(function(c){ return c.soc; });
-    var latest = cells[cells.length-1].soc;
-    card.querySelector('[data-stat="latest"]').textContent = latest.toFixed(1)+"%";
     card.querySelector('[data-stat="min"]').textContent = Math.min.apply(null,socs).toFixed(1)+"%";
     card.querySelector('[data-stat="max"]').textContent = Math.max.apply(null,socs).toFixed(1)+"%";
   }

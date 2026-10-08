@@ -29,3 +29,13 @@ and home battery data (state of charge by hour and date).
 
 This branch (`gh-pages`) is what GitHub Pages serves directly — pushing
 here is the deploy.
+
+## Running locally
+
+Double-clicking `index.html` (a `file:// URL`) won't show the charts, because the page fetches the JSON data files (data/*.json) with fetch(), and browsers block fetch() of local files for security reasons under `file://`. It needs an actual HTTP server, even a trivial local one.
+
+Open a terminal in the repo folder and run: 
+
+<code>python -m http.server 8000</code>
+
+then open `http://localhost:8000/index.html` in your browser. That serves the folder over real HTTP, so the fetch() calls succeed and you'll see the charts exactly as they render on the live site. Any port number works; just pick one that's free. Stop the server afterward with Ctrl+C (or close the terminal).
