@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>mhurk</title>
-<meta name="description" content="Heat pump, battery, and grid energy, tracked weekly.">
+<meta name="description" content="Heat pump defrost and compressor behaviour, charted from history.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="css/site.css">
 </head>
@@ -25,59 +25,67 @@
       This page shows some graphs from my home automation system. Sometimes new graphs will be added and sometimes older ones will be removed. Probably because I think they are useless or just ugly. Data is updated on a more or less regular basis, about one time per week. So no live feed.
     </p>
 
-    <p class="section-label">$ ls ./dashboards -la</p>
+    <p class="section-label">$ python export_ops_report_data.py</p>
 
     <div class="grid">
 
-      <div class="card" id="card-weheat">
+      <div class="card" id="card-defrost-temp">
         <div class="card-head">
-          <span class="card-name">Heat pump<span class="dim">(1)</span></span>
-          <span class="card-unit">COP</span>
+          <span class="card-name">DEFROST/TEMP<span class="dim">(1)</span></span>
+          <span class="card-unit">cycles</span>
         </div>
-        <p class="card-desc">Heat pump coefficient of performance — 7-day average.</p>
+        <p class="card-desc">Defrost cycle count binned by outdoor temperature.</p>
         <div class="chart-wrap"></div>
         <div class="stats">
-          <div class="stat"><div class="stat-label">Latest</div><div class="stat-value" data-stat="latest">—</div></div>
-          <div class="stat"><div class="stat-label">10-wk avg</div><div class="stat-value" data-stat="avg">—</div></div>
-          <div class="stat"><div class="stat-label">Trend</div><div class="stat-value" data-stat="trend">—</div></div>
+          <div class="stat"><div class="stat-label">Total</div><div class="stat-value" data-stat="total">—</div></div>
+          <div class="stat"><div class="stat-label">Peak bin</div><div class="stat-value" data-stat="peak-bin">—</div></div>
+          <div class="stat"><div class="stat-label">Peak count</div><div class="stat-value" data-stat="peak-val">—</div></div>
         </div>
       </div>
 
-      <div class="card" id="card-battery">
+      <div class="card" id="card-defrost-rh">
         <div class="card-head">
-          <span class="card-name">BATTERY<span class="dim">(1)</span></span>
-          <span class="card-unit">% SoC</span>
+          <span class="card-name">DEFROST/RH<span class="dim">(1)</span></span>
+          <span class="card-unit">cycles</span>
         </div>
-        <p class="card-desc">Average state of charge — 7-day average.</p>
+        <p class="card-desc">Defrost cycle count binned by relative humidity.</p>
         <div class="chart-wrap"></div>
         <div class="stats">
-          <div class="stat"><div class="stat-label">Latest</div><div class="stat-value" data-stat="latest">—</div></div>
-          <div class="stat"><div class="stat-label">10-wk avg</div><div class="stat-value" data-stat="avg">—</div></div>
-          <div class="stat"><div class="stat-label">Trend</div><div class="stat-value" data-stat="trend">—</div></div>
+          <div class="stat"><div class="stat-label">Total</div><div class="stat-value" data-stat="total">—</div></div>
+          <div class="stat"><div class="stat-label">Peak bin</div><div class="stat-value" data-stat="peak-bin">—</div></div>
+          <div class="stat"><div class="stat-label">Peak count</div><div class="stat-value" data-stat="peak-val">—</div></div>
         </div>
       </div>
 
-      <div class="card" id="card-energy">
+      <div class="card" id="card-rpm">
         <div class="card-head">
-          <span class="card-name">ENERGY<span class="dim">(1)</span></span>
-          <span class="card-unit">kWh/wk</span>
+          <span class="card-name">RPM/TEMP<span class="dim">(1)</span></span>
+          <span class="card-unit">RPM</span>
         </div>
-        <p class="card-desc">Grid import — total per week.</p>
+        <p class="card-desc">Average compressor RPM binned by outdoor temperature.</p>
         <div class="chart-wrap"></div>
         <div class="stats">
-          <div class="stat"><div class="stat-label">Latest</div><div class="stat-value" data-stat="latest">—</div></div>
-          <div class="stat"><div class="stat-label">10-wk avg</div><div class="stat-value" data-stat="avg">—</div></div>
-          <div class="stat"><div class="stat-label">Trend</div><div class="stat-value" data-stat="trend">—</div></div>
+          <div class="stat"><div class="stat-label">Min</div><div class="stat-value" data-stat="min">—</div></div>
+          <div class="stat"><div class="stat-label">Max</div><div class="stat-value" data-stat="max">—</div></div>
+          <div class="stat"><div class="stat-label">Range</div><div class="stat-value" data-stat="range">—</div></div>
+        </div>
+      </div>
+
+      <div class="card card-wide" id="card-defrost-map">
+        <div class="card-head">
+          <span class="card-name">DEFROST MAP<span class="dim">(1)</span></span>
+          <span class="card-unit">temp × RH</span>
+        </div>
+        <p class="card-desc">Defrost cycle density across temperature and relative humidity.</p>
+        <div class="chart-wrap"></div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Total</div><div class="stat-value" data-stat="total">—</div></div>
+          <div class="stat"><div class="stat-label">Peak cell</div><div class="stat-value" data-stat="peak-bin">—</div></div>
+          <div class="stat"><div class="stat-label">Peak count</div><div class="stat-value" data-stat="peak-val">—</div></div>
         </div>
       </div>
 
     </div>
-
-    <p class="note">
-      <b>#</b> seed data — these three series are placeholders standing in for the real
-      heat pump / battery / grid feeds, which are still being wired up. Layout and refresh
-      behaviour are final; <code>data/*.json</code> is what the weekly script will overwrite.
-    </p>
 
     <footer>
       <div><span class="k">$</span> schedule</div>
@@ -89,50 +97,120 @@
 
 <script>
 (function(){
-  var CARDS = {
-    weheat:  { id:"card-weheat",  file:"data/weheat.json",  color:"var(--weheat)",  fmt:function(v){return v.toFixed(1);},        unit:"",    trendUnit:" COP" },
-    battery: { id:"card-battery", file:"data/battery.json", color:"var(--battery)", fmt:function(v){return Math.round(v)+"%";},  unit:"%",   trendUnit:"pt" },
-    energy:  { id:"card-energy", file:"data/energy.json",  color:"var(--energy)",  fmt:function(v){return Math.round(v);},      unit:" kWh",trendUnit:" kWh" }
+  // --- binned operational charts (defrost / compressor RPM) ---------------
+
+  var BAR_CARDS = {
+    defrostTemp: { id:"card-defrost-temp", file:"data/defrost_vs_temp.json",     xKey:"temp_bin",     color:"var(--weheat)",  xFmt:function(v){ return v+"°"; } },
+    defrostRh:   { id:"card-defrost-rh",   file:"data/defrost_vs_humidity.json", xKey:"humidity_bin", color:"var(--battery)", xFmt:function(v){ return v+"%"; } }
   };
 
-  var W=600,H=200,PAD_L=34,PAD_R=8,PAD_T=12,PAD_B=22;
-  var plotW=W-PAD_L-PAD_R, plotH=H-PAD_T-PAD_B;
-
-  function shortDate(iso){
-    var d = new Date(iso+"T00:00:00");
-    var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    return months[d.getMonth()] + " " + String(d.getDate()).padStart(2,"0");
+  function renderBarStats(card, data, cfg){
+    var total = data.reduce(function(s,d){ return s+d.cycles; }, 0);
+    var peak = data.reduce(function(a,b){ return b.cycles>a.cycles ? b : a; }, data[0]);
+    card.querySelector('[data-stat="total"]').textContent = total;
+    card.querySelector('[data-stat="peak-bin"]').textContent = cfg.xFmt(peak[cfg.xKey]);
+    card.querySelector('[data-stat="peak-val"]').textContent = peak.cycles;
   }
 
-  function renderStats(card, points, cfg){
-    var vals = points.map(function(p){return p.value;});
-    var n = vals.length;
-    var latest = vals[n-1];
-    var avg = vals.reduce(function(a,b){return a+b;},0)/n;
-    var delta = vals[n-1]-vals[0];
-    var arrow = delta>0 ? "▲" : (delta<0 ? "▼" : "—");
-
-    card.querySelector('[data-stat="latest"]').textContent = cfg.fmt(latest);
-    card.querySelector('[data-stat="avg"]').innerHTML = cfg.fmt(avg);
-    card.querySelector('[data-stat="trend"]').innerHTML =
-      arrow + ' <span class="arrow">' + Math.abs(delta).toFixed(cfg.unit==="%"||cfg.unit===""?1:0) + cfg.trendUnit + ' / ' + (n-1) + 'wk</span>';
-  }
-
-  function build(key, points){
-    var cfg = CARDS[key];
+  function buildBarChart(key, data){
+    var cfg = BAR_CARDS[key];
     var card = document.getElementById(cfg.id);
     var wrap = card.querySelector(".chart-wrap");
-    var vals = points.map(function(p){return p.value;});
-    var labels = points.map(function(p){return shortDate(p.date);});
-    var n = vals.length;
-    var min = Math.min.apply(null,vals), max = Math.max.apply(null,vals);
-    if (min===max){ min-=1; max+=1; }
-    var pad = (max-min)*0.12;
-    min -= pad; max += pad;
+    var n = data.length;
+    var maxVal = Math.max.apply(null, data.map(function(d){ return d.cycles; }));
+    if (maxVal <= 0) maxVal = 1;
 
+    var W=600,H=200,PAD_L=30,PAD_R=8,PAD_T=10,PAD_B=24;
+    var plotW=W-PAD_L-PAD_R, plotH=H-PAD_T-PAD_B;
+    var bw = plotW/n;
+
+    function barX(i){ return PAD_L + i*bw; }
+    function barY(v){ return PAD_T + (1-v/maxVal)*plotH; }
+
+    var svgns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgns,"svg");
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    svg.setAttribute("preserveAspectRatio","none");
+
+    for (var g=0; g<4; g++){
+      var frac = g/3;
+      var v = maxVal*frac;
+      var y = barY(v);
+      var line = document.createElementNS(svgns,"line");
+      line.setAttribute("class","gline");
+      line.setAttribute("x1",PAD_L); line.setAttribute("x2",W-PAD_R);
+      line.setAttribute("y1",y); line.setAttribute("y2",y);
+      svg.appendChild(line);
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","gtick");
+      txt.setAttribute("x",2); txt.setAttribute("y",y+3);
+      txt.textContent = Math.round(v);
+      svg.appendChild(txt);
+    }
+
+    var tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+
+    data.forEach(function(d,i){
+      var y = barY(d.cycles);
+      var rect = document.createElementNS(svgns,"rect");
+      rect.setAttribute("class","bar");
+      rect.setAttribute("x", barX(i)+bw*0.12);
+      rect.setAttribute("y", y);
+      rect.setAttribute("width", Math.max(bw*0.76,1));
+      rect.setAttribute("height", Math.max(PAD_T+plotH-y,0));
+      rect.setAttribute("rx",2);
+      rect.setAttribute("fill", cfg.color);
+      svg.appendChild(rect);
+
+      rect.addEventListener("mouseenter", function(){
+        rect.classList.add("bar-hover");
+        var rectBox = svg.getBoundingClientRect();
+        var scale = rectBox.width / W;
+        var px = (barX(i)+bw/2)*scale;
+        var py = y*scale;
+        tooltip.innerHTML = cfg.xFmt(d[cfg.xKey]) + ' &nbsp;<b>' + d.cycles + '</b> cycles';
+        tooltip.style.left = px+"px";
+        tooltip.style.top = (py-8)+"px";
+        tooltip.style.opacity = 1;
+      });
+      rect.addEventListener("mouseleave", function(){
+        rect.classList.remove("bar-hover");
+        tooltip.style.opacity = 0;
+      });
+    });
+
+    [0, Math.round((n-1)/2), n-1].forEach(function(i){
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","xtick");
+      txt.setAttribute("x", barX(i)+bw/2);
+      txt.setAttribute("y", H-4);
+      txt.setAttribute("text-anchor","middle");
+      txt.textContent = cfg.xFmt(data[i][cfg.xKey]);
+      svg.appendChild(txt);
+    });
+
+    wrap.appendChild(svg);
+    wrap.appendChild(tooltip);
+
+    renderBarStats(card, data, cfg);
+  }
+
+  function buildRpmChart(data){
+    var card = document.getElementById("card-rpm");
+    var wrap = card.querySelector(".chart-wrap");
+    var n = data.length;
+    var vals = data.map(function(d){ return d.rpm; });
+    var xs = data.map(function(d){ return d.outdoor_temp; });
+    var min = Math.min.apply(null,vals), max = Math.max.apply(null,vals);
+    var pad = (max-min)*0.12; min -= pad; max += pad;
+
+    var W=600,H=200,PAD_L=40,PAD_R=8,PAD_T=12,PAD_B=22;
+    var plotW=W-PAD_L-PAD_R, plotH=H-PAD_T-PAD_B;
     function X(i){ return PAD_L + (i/(n-1))*plotW; }
     function Y(v){ return PAD_T + (1-(v-min)/(max-min))*plotH; }
 
+    var color = "var(--weheat)";
     var svgns = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(svgns,"svg");
     svg.setAttribute("viewBox","0 0 "+W+" "+H);
@@ -140,15 +218,12 @@
 
     var defs = document.createElementNS(svgns,"defs");
     var grad = document.createElementNS(svgns,"linearGradient");
-    var gid = "grad-"+key;
-    grad.setAttribute("id",gid);
+    grad.setAttribute("id","grad-rpm");
     grad.setAttribute("x1","0"); grad.setAttribute("y1","0");
     grad.setAttribute("x2","0"); grad.setAttribute("y2","1");
-    var stop1 = document.createElementNS(svgns,"stop");
-    stop1.setAttribute("offset","0%"); stop1.setAttribute("stop-color",cfg.color);
-    var stop2 = document.createElementNS(svgns,"stop");
-    stop2.setAttribute("offset","100%"); stop2.setAttribute("stop-color",cfg.color); stop2.setAttribute("stop-opacity","0");
-    grad.appendChild(stop1); grad.appendChild(stop2);
+    var s1 = document.createElementNS(svgns,"stop"); s1.setAttribute("offset","0%"); s1.setAttribute("stop-color",color);
+    var s2 = document.createElementNS(svgns,"stop"); s2.setAttribute("offset","100%"); s2.setAttribute("stop-color",color); s2.setAttribute("stop-opacity","0");
+    grad.appendChild(s1); grad.appendChild(s2);
     defs.appendChild(grad);
     svg.appendChild(defs);
 
@@ -164,7 +239,7 @@
       var txt = document.createElementNS(svgns,"text");
       txt.setAttribute("class","gtick");
       txt.setAttribute("x",2); txt.setAttribute("y",y+3);
-      txt.textContent = cfg.fmt(v);
+      txt.textContent = Math.round(v);
       svg.appendChild(txt);
     }
 
@@ -174,7 +249,7 @@
       txt.setAttribute("x",X(i));
       txt.setAttribute("y",H-4);
       txt.setAttribute("text-anchor", i===0 ? "start" : (i===n-1 ? "end" : "middle"));
-      txt.textContent = labels[i];
+      txt.textContent = xs[i]+"°";
       svg.appendChild(txt);
     });
 
@@ -184,20 +259,14 @@
     var area = document.createElementNS(svgns,"path");
     area.setAttribute("class","area");
     area.setAttribute("d",areaD);
-    area.setAttribute("fill","url(#"+gid+")");
+    area.setAttribute("fill","url(#grad-rpm)");
     svg.appendChild(area);
 
     var linePath = document.createElementNS(svgns,"path");
     linePath.setAttribute("class","line-path");
     linePath.setAttribute("d",d);
-    linePath.setAttribute("stroke",cfg.color);
+    linePath.setAttribute("stroke",color);
     svg.appendChild(linePath);
-
-    var endC = document.createElementNS(svgns,"circle");
-    endC.setAttribute("class","endpoint");
-    endC.setAttribute("cx",X(n-1)); endC.setAttribute("cy",Y(vals[n-1])); endC.setAttribute("r",4);
-    endC.setAttribute("fill",cfg.color);
-    svg.appendChild(endC);
 
     var hoverLine = document.createElementNS(svgns,"line");
     hoverLine.setAttribute("class","hoverline");
@@ -207,7 +276,7 @@
     var hoverPt = document.createElementNS(svgns,"circle");
     hoverPt.setAttribute("class","hoverpt");
     hoverPt.setAttribute("r",4.5);
-    hoverPt.setAttribute("fill",cfg.color);
+    hoverPt.setAttribute("fill",color);
     svg.appendChild(hoverPt);
 
     var hit = document.createElementNS(svgns,"rect");
@@ -241,7 +310,7 @@
       hoverPt.setAttribute("cx",X(i)); hoverPt.setAttribute("cy",Y(vals[i]));
       hoverPt.style.opacity = 1;
 
-      tooltip.innerHTML = '<span class="tt-date">'+labels[i]+'</span> &nbsp;'+cfg.fmt(vals[i])+cfg.unit;
+      tooltip.innerHTML = xs[i] + '°C &nbsp;<b>' + Math.round(vals[i]) + '</b> RPM <span class="tt-date">(n='+data[i].n+')</span>';
       tooltip.style.left = px+"px";
       tooltip.style.top = (py-10)+"px";
       tooltip.style.opacity = 1;
@@ -253,15 +322,154 @@
       tooltip.style.opacity = 0;
     });
 
-    renderStats(card, points, cfg);
+    var rawMin = Math.min.apply(null, vals);
+    var rawMax = Math.max.apply(null, vals);
+    card.querySelector('[data-stat="min"]').textContent = Math.round(rawMin);
+    card.querySelector('[data-stat="max"]').textContent = Math.round(rawMax);
+    card.querySelector('[data-stat="range"]').textContent = Math.round(rawMax-rawMin);
   }
 
-  Object.keys(CARDS).forEach(function(key){
-    fetch(CARDS[key].file)
-      .then(function(r){ return r.json(); })
-      .then(function(points){ build(key, points); })
-      .catch(function(err){ console.error("failed to load", CARDS[key].file, err); });
-  });
+  function heatColor(count, maxCount){
+    var t = maxCount>0 ? count/maxCount : 0;
+    var r = Math.round(17 + (88-17)*t);
+    var gr = Math.round(20 + (166-20)*t);
+    var b = Math.round(23 + (255-23)*t);
+    return "rgb("+r+","+gr+","+b+")";
+  }
+
+  function buildHeatmap(data){
+    var card = document.getElementById("card-defrost-map");
+    var wrap = card.querySelector(".chart-wrap");
+    var cells = data.cells;
+
+    var tempBins = Array.from(new Set(cells.map(function(c){ return c.temp_bin; }))).sort(function(a,b){ return a-b; });
+    var rhBins = Array.from(new Set(cells.map(function(c){ return c.humidity_bin; }))).sort(function(a,b){ return a-b; });
+    var cols = tempBins.length, rows = rhBins.length;
+    var maxCount = Math.max.apply(null, cells.map(function(c){ return c.count; }));
+    if (maxCount <= 0) maxCount = 1;
+
+    var lookup = {};
+    cells.forEach(function(c){ lookup[c.temp_bin+"|"+c.humidity_bin] = c.count; });
+
+    var W=600,H=270,PAD_L=34,PAD_R=8,PAD_T=8,GRID_H=176;
+    var gridW = W-PAD_L-PAD_R;
+    var cellW = gridW/cols, cellH = GRID_H/rows;
+    var xLabelY = PAD_T+GRID_H+14;
+    var legendY = PAD_T+GRID_H+26;
+    var legendW = gridW*0.42;
+
+    var svgns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgns,"svg");
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    svg.setAttribute("preserveAspectRatio","none");
+
+    var defs = document.createElementNS(svgns,"defs");
+    var legendGrad = document.createElementNS(svgns,"linearGradient");
+    legendGrad.setAttribute("id","legend-grad");
+    legendGrad.setAttribute("x1","0%"); legendGrad.setAttribute("y1","0%");
+    legendGrad.setAttribute("x2","100%"); legendGrad.setAttribute("y2","0%");
+    var lg1 = document.createElementNS(svgns,"stop"); lg1.setAttribute("offset","0%"); lg1.setAttribute("stop-color", heatColor(0,maxCount));
+    var lg2 = document.createElementNS(svgns,"stop"); lg2.setAttribute("offset","100%"); lg2.setAttribute("stop-color", heatColor(maxCount,maxCount));
+    legendGrad.appendChild(lg1); legendGrad.appendChild(lg2);
+    defs.appendChild(legendGrad);
+    svg.appendChild(defs);
+
+    var tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+
+    tempBins.forEach(function(tb,ci){
+      rhBins.forEach(function(rb,ri){
+        var count = lookup[tb+"|"+rb] || 0;
+        var x = PAD_L+ci*cellW, y = PAD_T+(rows-1-ri)*cellH;
+        var rect = document.createElementNS(svgns,"rect");
+        rect.setAttribute("x",x); rect.setAttribute("y",y);
+        rect.setAttribute("width",cellW); rect.setAttribute("height",cellH);
+        rect.setAttribute("fill", heatColor(count,maxCount));
+        rect.setAttribute("stroke","var(--bg)");
+        rect.setAttribute("stroke-width","1");
+        svg.appendChild(rect);
+
+        rect.addEventListener("mouseenter", function(){
+          var rectBox = svg.getBoundingClientRect();
+          var scale = rectBox.width / W;
+          tooltip.innerHTML = tb+'°C / '+rb+'% &nbsp;<b>'+count+'</b> cycles';
+          tooltip.style.left = ((x+cellW/2)*scale)+"px";
+          tooltip.style.top = (y*scale)+"px";
+          tooltip.style.opacity = 1;
+          rect.setAttribute("stroke","var(--ink-2)");
+        });
+        rect.addEventListener("mouseleave", function(){
+          tooltip.style.opacity = 0;
+          rect.setAttribute("stroke","var(--bg)");
+        });
+      });
+    });
+
+    tempBins.forEach(function(tb,ci){
+      if (ci % 4 !== 0 && ci !== tempBins.length-1) return;
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","xtick");
+      txt.setAttribute("x", PAD_L+ci*cellW+cellW/2);
+      txt.setAttribute("y", xLabelY);
+      txt.setAttribute("text-anchor","middle");
+      txt.textContent = tb+"°";
+      svg.appendChild(txt);
+    });
+
+    rhBins.forEach(function(rb,ri){
+      if (ri % 4 !== 0 && ri !== rhBins.length-1) return;
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","gtick");
+      txt.setAttribute("x",2);
+      txt.setAttribute("y", PAD_T+(rows-1-ri)*cellH+cellH/2+3);
+      txt.textContent = rb+"%";
+      svg.appendChild(txt);
+    });
+
+    var legendRect = document.createElementNS(svgns,"rect");
+    legendRect.setAttribute("x",PAD_L); legendRect.setAttribute("y",legendY);
+    legendRect.setAttribute("width",legendW); legendRect.setAttribute("height",8);
+    legendRect.setAttribute("fill","url(#legend-grad)");
+    svg.appendChild(legendRect);
+
+    var legend0 = document.createElementNS(svgns,"text");
+    legend0.setAttribute("class","gtick");
+    legend0.setAttribute("x",PAD_L); legend0.setAttribute("y",legendY+20);
+    legend0.textContent = "0";
+    svg.appendChild(legend0);
+
+    var legendMax = document.createElementNS(svgns,"text");
+    legendMax.setAttribute("class","gtick");
+    legendMax.setAttribute("x",PAD_L+legendW); legendMax.setAttribute("y",legendY+20);
+    legendMax.setAttribute("text-anchor","end");
+    legendMax.textContent = maxCount+" cycles";
+    svg.appendChild(legendMax);
+
+    wrap.appendChild(svg);
+    wrap.appendChild(tooltip);
+
+    var total = cells.reduce(function(s,c){ return s+c.count; }, 0);
+    var peak = cells.reduce(function(a,b){ return b.count>a.count ? b : a; }, cells[0]);
+    card.querySelector('[data-stat="total"]').textContent = total;
+    card.querySelector('[data-stat="peak-bin"]').textContent = peak.temp_bin+"°/"+peak.humidity_bin+"%";
+    card.querySelector('[data-stat="peak-val"]').textContent = peak.count;
+  }
+
+  fetch("data/defrost_vs_temp.json").then(function(r){ return r.json(); })
+    .then(function(d){ buildBarChart("defrostTemp", d); })
+    .catch(function(err){ console.error("failed to load defrost_vs_temp.json", err); });
+
+  fetch("data/defrost_vs_humidity.json").then(function(r){ return r.json(); })
+    .then(function(d){ buildBarChart("defrostRh", d); })
+    .catch(function(err){ console.error("failed to load defrost_vs_humidity.json", err); });
+
+  fetch("data/compressor_rpm.json").then(function(r){ return r.json(); })
+    .then(function(d){ buildRpmChart(d); })
+    .catch(function(err){ console.error("failed to load compressor_rpm.json", err); });
+
+  fetch("data/defrost_heatmap.json").then(function(r){ return r.json(); })
+    .then(function(d){ buildHeatmap(d); })
+    .catch(function(err){ console.error("failed to load defrost_heatmap.json", err); });
 })();
 </script>
 </body>
