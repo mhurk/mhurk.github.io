@@ -545,4 +545,195 @@
   fetch("data/battery_heatmap.json").then(function(r){ return r.json(); })
     .then(function(d){ buildBatteryHeatmap(d); })
     .catch(function(err){ console.error("failed to load battery_heatmap.json", err); });
+
+  // --- solar production radar charts (weekly / monthly, by year) ----------
+
+  var YEAR_COLORS = ["var(--weheat)", "var(--battery)", "var(--energy)", "var(--ink-1)"];
+
+  function buildRadarChart(cardId, payload, opts){
+    var card = document.getElementById(cardId);
+    var wrap = card.querySelector(".chart-wrap");
+    var years = Object.keys(payload.years).sort();
+    var n = opts.periodLabels ? opts.periodLabels.length : opts.nPeriods;
+
+    var allVals = [];
+    years.forEach(function(y){
+      payload.years[y].forEach(function(v){ if (v != null) allVals.push(v); });
+    });
+    var maxVal = Math.max.apply(null, allVals) * 1.08;
+    if (!(maxVal > 0)) maxVal = 1;
+
+    var W=420, H=420, CX=W/2, CY=195, R=150;
+
+    function angle(i){ return -Math.PI/2 + i*(2*Math.PI/n); }
+    function ptX(i,r){ return CX + r*Math.cos(angle(i)); }
+    function ptY(i,r){ return CY + r*Math.sin(angle(i)); }
+    function valR(v){ return (v/maxVal)*R; }
+
+    var svgns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgns,"svg");
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+
+    // label entries: every spoke for monthly, only month-start spokes for weekly
+    var labelEntries = opts.periodLabels
+      ? opts.periodLabels.map(function(lbl,i){ return [lbl,i]; })
+      : opts.monthTicks.map(function(t){ return [t[0], t[1]-1]; });
+
+    // grid rings, value ticks offset into the gap between the first two spokes
+    var tickAngle = -Math.PI/2 + 0.5*(2*Math.PI/n);
+    for (var g=1; g<=4; g++){
+      var rr = R*(g/4);
+      var circle = document.createElementNS(svgns,"circle");
+      circle.setAttribute("cx",CX); circle.setAttribute("cy",CY); circle.setAttribute("r",rr);
+      circle.setAttribute("class","gline");
+      circle.setAttribute("fill","none");
+      svg.appendChild(circle);
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","gtick");
+      txt.setAttribute("x", CX+rr*Math.cos(tickAngle));
+      txt.setAttribute("y", CY+rr*Math.sin(tickAngle)+3);
+      txt.textContent = Math.round(maxVal*(g/4));
+      svg.appendChild(txt);
+    }
+
+    // spokes (all of them for monthly; just the labelled ones for weekly, to
+    // avoid 53 cluttered radial lines)
+    labelEntries.forEach(function(entry){
+      var line = document.createElementNS(svgns,"line");
+      line.setAttribute("x1",CX); line.setAttribute("y1",CY);
+      line.setAttribute("x2",ptX(entry[1],R)); line.setAttribute("y2",ptY(entry[1],R));
+      line.setAttribute("class","gline");
+      svg.appendChild(line);
+    });
+
+    // period labels, anchored/offset by which side of the circle they're on
+    labelEntries.forEach(function(entry){
+      var lbl=entry[0], i=entry[1];
+      var a = angle(i);
+      var cosA = Math.cos(a), sinA = Math.sin(a);
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","xtick");
+      txt.setAttribute("x", ptX(i,R+10));
+      txt.setAttribute("y", ptY(i,R+10) + (sinA>0.3?8:(sinA<-0.3?0:4)));
+      txt.setAttribute("text-anchor", cosA>0.3?"start":(cosA<-0.3?"end":"middle"));
+      txt.textContent = lbl;
+      svg.appendChild(txt);
+    });
+
+    var tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+    var legendItems = [];
+    var allPoints = [];
+
+    years.forEach(function(y,yi){
+      var color = YEAR_COLORS[yi % YEAR_COLORS.length];
+      var vals = payload.years[y];
+      var pts = [];
+      for (var i=0;i<n;i++){
+        if (vals[i] == null) continue;
+        pts.push({i:i, x:ptX(i,valR(vals[i])), y:ptY(i,valR(vals[i])), v:vals[i]});
+      }
+      if (pts.length === 0) return;
+      var isComplete = pts.length === n;
+
+      var d = "M"+pts[0].x+","+pts[0].y;
+      for (var k=1;k<pts.length;k++){ d += " L"+pts[k].x+","+pts[k].y; }
+      if (isComplete) d += " Z";
+
+      if (isComplete){
+        var area = document.createElementNS(svgns,"path");
+        area.setAttribute("d",d);
+        area.setAttribute("fill",color);
+        area.setAttribute("fill-opacity","0.12");
+        area.setAttribute("stroke","none");
+        svg.appendChild(area);
+      }
+
+      var linePath = document.createElementNS(svgns,"path");
+      linePath.setAttribute("d",d);
+      linePath.setAttribute("fill","none");
+      linePath.setAttribute("stroke",color);
+      linePath.setAttribute("stroke-width","2");
+      if (!isComplete) linePath.setAttribute("stroke-dasharray","4 3");
+      svg.appendChild(linePath);
+
+      pts.forEach(function(p){
+        var dot = document.createElementNS(svgns,"circle");
+        dot.setAttribute("cx",p.x); dot.setAttribute("cy",p.y); dot.setAttribute("r","2.5");
+        dot.setAttribute("fill",color);
+        svg.appendChild(dot);
+        allPoints.push({x:p.x, y:p.y, v:p.v, i:p.i, year:y});
+      });
+
+      legendItems.push({year:y, color:color});
+    });
+
+    // Hit targets in their own top layer, appended after every year's area
+    // fill — otherwise a later (filled) year sits on top in paint order and
+    // silently swallows hover on an earlier year's points underneath it.
+    var hitsGroup = document.createElementNS(svgns,"g");
+    allPoints.forEach(function(p){
+      var hit = document.createElementNS(svgns,"circle");
+      hit.setAttribute("cx",p.x); hit.setAttribute("cy",p.y); hit.setAttribute("r","7");
+      hit.setAttribute("fill","transparent");
+      hitsGroup.appendChild(hit);
+
+      var periodLabel = opts.periodLabels ? opts.periodLabels[p.i] : ("week "+(p.i+1));
+      hit.addEventListener("mouseenter", function(){
+        var rectBox = svg.getBoundingClientRect();
+        var scale = rectBox.width / W;
+        tooltip.innerHTML = p.year+' '+periodLabel+' &nbsp;<b>'+p.v.toFixed(1)+'</b> kWh';
+        tooltip.style.left = (p.x*scale)+"px";
+        tooltip.style.top = (p.y*scale-8)+"px";
+        tooltip.style.opacity = 1;
+      });
+      hit.addEventListener("mouseleave", function(){ tooltip.style.opacity = 0; });
+    });
+    svg.appendChild(hitsGroup);
+
+    var legendY = H-12;
+    var legendX0 = CX - (legendItems.length*56)/2;
+    legendItems.forEach(function(item,i){
+      var dot = document.createElementNS(svgns,"circle");
+      dot.setAttribute("cx",legendX0+i*56+5); dot.setAttribute("cy",legendY); dot.setAttribute("r","4");
+      dot.setAttribute("fill",item.color);
+      svg.appendChild(dot);
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","gtick");
+      txt.setAttribute("x",legendX0+i*56+13); txt.setAttribute("y",legendY+3);
+      txt.textContent = item.year;
+      svg.appendChild(txt);
+    });
+
+    wrap.appendChild(svg);
+    wrap.appendChild(tooltip);
+
+    var latestYear = years[years.length-1];
+    var latestVals = payload.years[latestYear];
+    var latestIdx = -1;
+    for (var i=0;i<n;i++){ if (latestVals[i] != null) latestIdx = i; }
+
+    var peak = {val:-1, year:null, idx:0};
+    years.forEach(function(y){
+      payload.years[y].forEach(function(v,i){
+        if (v != null && v > peak.val){ peak = {val:v, year:y, idx:i}; }
+      });
+    });
+    var peakLabel = opts.periodLabels ? opts.periodLabels[peak.idx] : ("wk "+(peak.idx+1));
+
+    card.querySelector('[data-stat="latest"]').textContent =
+      latestIdx >= 0 ? latestVals[latestIdx].toFixed(1) : "—";
+    card.querySelector('[data-stat="peak"]').textContent =
+      peak.val.toFixed(1)+" ("+peakLabel+" "+peak.year+")";
+    card.querySelector('[data-stat="years"]').textContent = years.join(", ");
+  }
+
+  fetch("data/solar_monthly.json").then(function(r){ return r.json(); })
+    .then(function(d){ buildRadarChart("card-solar-monthly", d, {periodLabels: d.periods}); })
+    .catch(function(err){ console.error("failed to load solar_monthly.json", err); });
+
+  fetch("data/solar_weekly.json").then(function(r){ return r.json(); })
+    .then(function(d){ buildRadarChart("card-solar-weekly", d, {nPeriods: d.n_periods, monthTicks: d.month_ticks}); })
+    .catch(function(err){ console.error("failed to load solar_weekly.json", err); });
 })();

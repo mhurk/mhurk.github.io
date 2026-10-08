@@ -112,8 +112,38 @@
 
     <p><b>Solar energy data</b></p>
     <p class="info">This spider plot (or radar plot if you have a mild form of arachnophobia) shows the energy produced by my 12 solar panels over different months and years.</p>
-    <p class="info">--- placeholder ---</p>
-<!-- placeholder for future solar energy data -->
+
+    <div class="grid">
+
+      <div class="card" id="card-solar-weekly">
+        <div class="card-head">
+          <span class="card-name">SOLAR/WEEK<span class="dim"></span></span>
+          <span class="card-unit">kWh</span>
+        </div>
+        <p class="card-desc">Weekly solar production by year.</p>
+        <div class="chart-wrap"></div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Latest</div><div class="stat-value" data-stat="latest">—</div></div>
+          <div class="stat"><div class="stat-label">Peak</div><div class="stat-value" data-stat="peak">—</div></div>
+          <div class="stat"><div class="stat-label">Years</div><div class="stat-value" data-stat="years">—</div></div>
+        </div>
+      </div>
+
+      <div class="card" id="card-solar-monthly">
+        <div class="card-head">
+          <span class="card-name">SOLAR/MONTH<span class="dim"></span></span>
+          <span class="card-unit">kWh</span>
+        </div>
+        <p class="card-desc">Monthly solar production by year.</p>
+        <div class="chart-wrap"></div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Latest</div><div class="stat-value" data-stat="latest">—</div></div>
+          <div class="stat"><div class="stat-label">Peak</div><div class="stat-value" data-stat="peak">—</div></div>
+          <div class="stat"><div class="stat-label">Years</div><div class="stat-value" data-stat="years">—</div></div>
+        </div>
+      </div>
+
+    </div>
 
 
     <footer>

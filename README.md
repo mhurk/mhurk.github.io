@@ -5,8 +5,9 @@ Personal homepage: **https://mhurk.github.io/**
 A single static page (no build step) styled as a terminal window — black
 background, monospace type — charting heat pump operational data (defrost
 cycles binned by outdoor temperature and by relative humidity, a defrost
-density map across both, and compressor RPM binned by outdoor temperature)
-and home battery data (state of charge by hour and date).
+density map across both, and compressor RPM binned by outdoor temperature),
+home battery data (state of charge by hour and date), and solar production
+(weekly/monthly radar plots, one line per year).
 
 ## Structure
 
@@ -20,6 +21,10 @@ and home battery data (state of charge by hour and date).
   project's own `export_ops_report_data.py` output.
 - `data/battery_heatmap.json` — mean state of charge per (date, hour) cell,
   sourced from the sibling `AlphaESS_history` project's `sizing.load()`.
+- `data/solar_weekly.json`, `data/solar_monthly.json` — solar production
+  grouped by year, read straight from the `solar_production_weekly/monthly.csv`
+  exports on `\\BigStation`. Years that predate the panels (all-zero) are
+  left out.
 - `scripts/sync_dashboards.py` — run weekly from home: republishes all of
   the above (stripping the Weheat export's approximate home location), then
   commits and pushes anything changed in the working tree. See
