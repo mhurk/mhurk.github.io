@@ -111,21 +111,23 @@
     </div>
 
     <p><b>Solar energy data</b></p>
-    <p class="info">This spider plot (or radar plot if you have a mild form of arachnophobia) shows the energy produced by my 12 solar panels over different months and years.</p>
+    <p class="info">This spider plot (or radar plot if you have a mild form of arachnophobia) shows the energy produced by my 12 solar panels over different months and years. 
+      The other chart shows inverter temperature versus AC output power, with every Throttled (power-capped) sample picked out against the general MPPT density — Throttled sits at a fairly fixed power level (~3700 W) across a range of temperatures, so it reads as a power ceiling rather than a thermal cutoff. This matches the max of my 16A fuse.
+    More info on MPPT on <a href="https://en.wikipedia.org/wiki/Maximum_power_point_tracking" target="_blank">Wikipedia</a></p>
 
     <div class="grid">
 
-      <div class="card" id="card-solar-weekly">
+      <div class="card" id="card-temp-power">
         <div class="card-head">
-          <span class="card-name">SOLAR/WEEK<span class="dim"></span></span>
-          <span class="card-unit">kWh</span>
+          <span class="card-name">TEMP/POWER<span class="dim"></span></span>
+          <span class="card-unit">°C vs W</span>
         </div>
-        <p class="card-desc">Weekly solar production by year.</p>
+        <p class="card-desc">Inverter temperature vs. AC output power. MPPT samples as density, THROTTLED samples plotted individually, dashed line at the nameplate AC rating.</p>
         <div class="chart-wrap"></div>
         <div class="stats">
-          <div class="stat"><div class="stat-label">Latest</div><div class="stat-value" data-stat="latest">—</div></div>
-          <div class="stat"><div class="stat-label">Peak</div><div class="stat-value" data-stat="peak">—</div></div>
-          <div class="stat"><div class="stat-label">Years</div><div class="stat-value" data-stat="years">—</div></div>
+          <div class="stat"><div class="stat-label">Throttled</div><div class="stat-value" data-stat="throttled">—</div></div>
+          <div class="stat"><div class="stat-label">Power</div><div class="stat-value" data-stat="power">—</div></div>
+          <div class="stat"><div class="stat-label">Temp range</div><div class="stat-value" data-stat="temp-range">—</div></div>
         </div>
       </div>
 

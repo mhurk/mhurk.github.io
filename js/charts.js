@@ -546,7 +546,7 @@
     .then(function(d){ buildBatteryHeatmap(d); })
     .catch(function(err){ console.error("failed to load battery_heatmap.json", err); });
 
-  // --- solar production radar charts (weekly / monthly, by year) ----------
+  // --- solar production radar chart (monthly, by year) --------------------
 
   var YEAR_COLORS = ["var(--weheat)", "var(--battery)", "var(--energy)", "var(--ink-1)"];
 
@@ -554,7 +554,7 @@
     var card = document.getElementById(cardId);
     var wrap = card.querySelector(".chart-wrap");
     var years = Object.keys(payload.years).sort();
-    var n = opts.periodLabels ? opts.periodLabels.length : opts.nPeriods;
+    var n = opts.periodLabels.length;
 
     var allVals = [];
     years.forEach(function(y){
@@ -575,10 +575,7 @@
     svg.setAttribute("viewBox","0 0 "+W+" "+H);
     svg.setAttribute("preserveAspectRatio","xMidYMid meet");
 
-    // label entries: every spoke for monthly, only month-start spokes for weekly
-    var labelEntries = opts.periodLabels
-      ? opts.periodLabels.map(function(lbl,i){ return [lbl,i]; })
-      : opts.monthTicks.map(function(t){ return [t[0], t[1]-1]; });
+    var labelEntries = opts.periodLabels.map(function(lbl,i){ return [lbl,i]; });
 
     // grid rings, value ticks offset into the gap between the first two spokes
     var tickAngle = -Math.PI/2 + 0.5*(2*Math.PI/n);
@@ -597,8 +594,6 @@
       svg.appendChild(txt);
     }
 
-    // spokes (all of them for monthly; just the labelled ones for weekly, to
-    // avoid 53 cluttered radial lines)
     labelEntries.forEach(function(entry){
       var line = document.createElementNS(svgns,"line");
       line.setAttribute("x1",CX); line.setAttribute("y1",CY);
@@ -679,7 +674,7 @@
       hit.setAttribute("fill","transparent");
       hitsGroup.appendChild(hit);
 
-      var periodLabel = opts.periodLabels ? opts.periodLabels[p.i] : ("week "+(p.i+1));
+      var periodLabel = opts.periodLabels[p.i];
       hit.addEventListener("mouseenter", function(){
         var rectBox = svg.getBoundingClientRect();
         var scale = rectBox.width / W;
@@ -720,7 +715,7 @@
         if (v != null && v > peak.val){ peak = {val:v, year:y, idx:i}; }
       });
     });
-    var peakLabel = opts.periodLabels ? opts.periodLabels[peak.idx] : ("wk "+(peak.idx+1));
+    var peakLabel = opts.periodLabels[peak.idx];
 
     card.querySelector('[data-stat="latest"]').textContent =
       latestIdx >= 0 ? latestVals[latestIdx].toFixed(1) : "—";
@@ -733,7 +728,127 @@
     .then(function(d){ buildRadarChart("card-solar-monthly", d, {periodLabels: d.periods}); })
     .catch(function(err){ console.error("failed to load solar_monthly.json", err); });
 
-  fetch("data/solar_weekly.json").then(function(r){ return r.json(); })
-    .then(function(d){ buildRadarChart("card-solar-weekly", d, {nPeriods: d.n_periods, monthTicks: d.month_ticks}); })
-    .catch(function(err){ console.error("failed to load solar_weekly.json", err); });
+  // --- inverter temperature vs. power, THROTTLED highlighted --------------
+
+  function densityColor(count, maxCount){
+    var t = maxCount>0 ? Math.log(1+count)/Math.log(1+maxCount) : 0;
+    var r = Math.round(17 + (63-17)*t);
+    var g = Math.round(20 + (185-20)*t);
+    var b = Math.round(18 + (80-18)*t);
+    return "rgb("+r+","+g+","+b+")";
+  }
+
+  function buildTempPowerChart(data){
+    var card = document.getElementById("card-temp-power");
+    var wrap = card.querySelector(".chart-wrap");
+
+    var W=600,H=500,PAD_L=36,PAD_R=10,PAD_T=10,PAD_B=22;
+    var plotW=W-PAD_L-PAD_R, plotH=H-PAD_T-PAD_B;
+    function X(t){ return PAD_L + (t/data.tmax)*plotW; }
+    function Y(p){ return PAD_T + (1-p/data.pmax)*plotH; }
+
+    var svgns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgns,"svg");
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    svg.setAttribute("preserveAspectRatio","none");
+
+    for (var g=0; g<4; g++){
+      var frac = g/3;
+      var v = data.pmax*frac;
+      var y = Y(v);
+      var line = document.createElementNS(svgns,"line");
+      line.setAttribute("class","gline");
+      line.setAttribute("x1",PAD_L); line.setAttribute("x2",W-PAD_R);
+      line.setAttribute("y1",y); line.setAttribute("y2",y);
+      svg.appendChild(line);
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","gtick");
+      txt.setAttribute("x",2); txt.setAttribute("y",y+3);
+      txt.textContent = Math.round(v);
+      svg.appendChild(txt);
+    }
+
+    [0, data.tmax/2, data.tmax].forEach(function(t,i){
+      var txt = document.createElementNS(svgns,"text");
+      txt.setAttribute("class","xtick");
+      txt.setAttribute("x", X(t));
+      txt.setAttribute("y", H-4);
+      txt.setAttribute("text-anchor", i===0 ? "start" : (i===2 ? "end" : "middle"));
+      txt.textContent = Math.round(t)+"°";
+      svg.appendChild(txt);
+    });
+
+    // MPPT sample density, log-scaled, as a background grid
+    var cellW = plotW/data.nx, cellH = plotH/data.ny;
+    var cellsG = document.createElementNS(svgns,"g");
+    data.cells.forEach(function(c){
+      var xi=c[0], yi=c[1], count=c[2];
+      var x = PAD_L + xi*cellW, y = PAD_T + plotH - (yi+1)*cellH;
+      var rect = document.createElementNS(svgns,"rect");
+      rect.setAttribute("x",x); rect.setAttribute("y",y);
+      rect.setAttribute("width", Math.max(cellW,1.1)); rect.setAttribute("height", Math.max(cellH,1.1));
+      rect.setAttribute("fill", densityColor(count, data.maxcount));
+      cellsG.appendChild(rect);
+    });
+    svg.appendChild(cellsG);
+
+    // dashed line at the inverter's nameplate AC rating
+    if (data.nameplate_w){
+      var ny = Y(data.nameplate_w);
+      var nline = document.createElementNS(svgns,"line");
+      nline.setAttribute("x1",PAD_L); nline.setAttribute("x2",W-PAD_R);
+      nline.setAttribute("y1",ny); nline.setAttribute("y2",ny);
+      nline.setAttribute("stroke","var(--ink-2)");
+      nline.setAttribute("stroke-width","1.2");
+      nline.setAttribute("stroke-dasharray","4,4");
+      nline.setAttribute("opacity","0.8");
+      svg.appendChild(nline);
+    }
+
+    var tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+
+    // every THROTTLED sample plotted individually on top of the density
+    var ptG = document.createElementNS(svgns,"g");
+    data.throttled_points.forEach(function(pt){
+      var temp=pt[0], power=pt[1];
+      var px = X(temp), py = Y(power);
+      var dot = document.createElementNS(svgns,"circle");
+      dot.setAttribute("cx",px); dot.setAttribute("cy",py);
+      dot.setAttribute("r","2.2");
+      dot.setAttribute("fill","var(--battery)");
+      dot.setAttribute("opacity","0.85");
+      ptG.appendChild(dot);
+
+      dot.addEventListener("mouseenter", function(){
+        var rectBox = svg.getBoundingClientRect();
+        var scale = rectBox.width / W;
+        tooltip.innerHTML = temp.toFixed(1)+'°C &nbsp;<b>'+Math.round(power)+'</b> W <span class="tt-date">THROTTLED</span>';
+        tooltip.style.left = (px*scale)+"px";
+        tooltip.style.top = (py*scale-8)+"px";
+        tooltip.style.opacity = 1;
+      });
+      dot.addEventListener("mouseleave", function(){ tooltip.style.opacity = 0; });
+    });
+    svg.appendChild(ptG);
+
+    wrap.appendChild(svg);
+    wrap.appendChild(tooltip);
+
+    var n = data.throttled_points.length;
+    card.querySelector('[data-stat="throttled"]').textContent = n;
+    if (n){
+      var powers = data.throttled_points.map(function(p){ return p[1]; }).sort(function(a,b){ return a-b; });
+      var temps = data.throttled_points.map(function(p){ return p[0]; }).sort(function(a,b){ return a-b; });
+      card.querySelector('[data-stat="power"]').textContent = Math.round(powers[Math.floor(powers.length/2)])+" W";
+      card.querySelector('[data-stat="temp-range"]').textContent = Math.round(temps[0])+"–"+Math.round(temps[temps.length-1])+"°C";
+    } else {
+      card.querySelector('[data-stat="power"]').textContent = "—";
+      card.querySelector('[data-stat="temp-range"]').textContent = "—";
+    }
+  }
+
+  fetch("data/temp_power.json").then(function(r){ return r.json(); })
+    .then(function(d){ buildTempPowerChart(d); })
+    .catch(function(err){ console.error("failed to load temp_power.json", err); });
 })();

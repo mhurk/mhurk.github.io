@@ -41,13 +41,19 @@ ALPHAESS_DB = Path(r"D:\Projects\AlphaESS_history\data\alphaess.db")
 BATTERY_HEATMAP_DAYS = 75  # ~3 months — keeps this repo's copy a stable size as the source grows
 
 # Sibling project for solar production. Its own export_performance_data.py
-# computes a monthly_by_year aggregate but no weekly one, so this queries
-# solaredge.db directly — same SQL its fetch_daily() uses (sum of the
-# 'Production' meter per day), just bucketed by ISO week as well as by
-# month. Replaced the earlier \\BigStation Home Assistant CSV export, which
-# wasn't accurate/complete enough (HA's own solar_production history).
+# computes a monthly_by_year aggregate, so this queries solaredge.db
+# directly — same SQL its fetch_daily() uses (sum of the 'Production' meter
+# per day) — just bucketed by month here. Replaced the earlier \\BigStation
+# Home Assistant CSV export, which wasn't accurate/complete enough (HA's own
+# solar_production history).
 SOLAREDGE_DB = Path(r"D:\Projects\Solaredge_history\solaredge.db")
 MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+
+# Grid resolution for the temperature-vs-power density chart (same sparse
+# [xi,yi,count] shape as the sibling project's own ops_analysis.py/
+# fetch_temp_power(), just a coarser grid sized for a small card).
+TEMP_POWER_NX = 60
+TEMP_POWER_NY = 50
 
 
 def sync_ops_charts() -> list[str]:
@@ -107,13 +113,13 @@ def sync_battery_heatmap() -> list[str]:
 
 
 def sync_solar_charts() -> list[str]:
-    """Republish weekly/monthly solar production, grouped by year.
+    """Republish monthly solar production, grouped by year.
 
     Queries solaredge.db directly for daily production (same SQL as the
     sibling project's own fetch_daily()), then buckets those daily kWh
-    figures into both calendar months and ISO weeks here. Years that are
-    all-zero are left out entirely (defensive; shouldn't happen with this
-    source, unlike the old CSV one).
+    figures into calendar months here. Years that are all-zero are left out
+    entirely (defensive; shouldn't happen with this source, unlike the old
+    CSV one).
     """
     if not SOLAREDGE_DB.exists():
         print(f"skipping solar charts: {SOLAREDGE_DB} not found", file=sys.stderr)
@@ -129,21 +135,13 @@ def sync_solar_charts() -> list[str]:
     finally:
         conn.close()
 
-    written = []
     monthly_by_year: dict[str, list[float | None]] = {}
-    weekly_by_year: dict[str, list[float | None]] = {}
 
     for day_str, kwh in daily:
         d = date.fromisoformat(day_str)
-
         month_year = str(d.year)
         row = monthly_by_year.setdefault(month_year, [None] * 12)
         row[d.month - 1] = (row[d.month - 1] or 0) + kwh
-
-        iso_year, iso_week, _ = d.isocalendar()
-        week_year = str(iso_year)
-        row = weekly_by_year.setdefault(week_year, [None] * 53)
-        row[iso_week - 1] = (row[iso_week - 1] or 0) + kwh
 
     monthly_years = sorted(y for y, vals in monthly_by_year.items()
                             if any(v is not None and v > 0 for v in vals))
@@ -153,23 +151,76 @@ def sync_solar_charts() -> list[str]:
         "years": {y: [round(v, 2) if v is not None else None for v in monthly_by_year[y]]
                   for y in monthly_years},
     }, indent=2) + "\n", encoding="utf-8")
-    written.append("data/solar_monthly.json")
+    return ["data/solar_monthly.json"]
 
-    weekly_years = sorted(y for y, vals in weekly_by_year.items()
-                           if any(v is not None and v > 0 for v in vals))
-    ref_year = int(weekly_years[-1]) if weekly_years else date.today().year
-    month_ticks = [[label, date(ref_year, m, 1).isocalendar()[1]]
-                   for m, label in enumerate(MONTH_LABELS, start=1)]
-    path = DATA_DIR / "solar_weekly.json"
+
+def sync_temp_power_chart() -> list[str]:
+    """Republish the inverter temperature-vs-power chart (THROTTLED highlighted).
+
+    Queries solaredge.db directly — same joins as the sibling project's own
+    ops_analysis.py/fetch_temp_power(), which has no standalone JSON export
+    of its own (baked straight into ops_report.html's inline <script>
+    payload) — rebuilding the sparse MPPT density grid and the list of
+    individual THROTTLED samples here, at a coarser resolution sized for a
+    small card rather than that report's full-width chart.
+    """
+    if not SOLAREDGE_DB.exists():
+        print(f"skipping temp/power chart: {SOLAREDGE_DB} not found", file=sys.stderr)
+        return []
+
+    import re
+    import sqlite3
+    conn = sqlite3.connect(SOLAREDGE_DB)
+    try:
+        mppt_rows = conn.execute("""
+            SELECT t.value, p.value
+            FROM equipment_telemetry m
+            JOIN equipment_telemetry t ON t.timestamp=m.timestamp AND t.serial_number=m.serial_number AND t.field='temperature'
+            JOIN equipment_telemetry p ON p.timestamp=m.timestamp AND p.serial_number=m.serial_number AND p.field='totalActivePower'
+            WHERE m.field='inverterMode' AND m.value='MPPT'
+        """).fetchall()
+        throttled_rows = conn.execute("""
+            SELECT t.value, p.value
+            FROM equipment_telemetry m
+            JOIN equipment_telemetry t ON t.timestamp=m.timestamp AND t.serial_number=m.serial_number AND t.field='temperature'
+            JOIN equipment_telemetry p ON p.timestamp=m.timestamp AND p.serial_number=m.serial_number AND p.field='totalActivePower'
+            WHERE m.field='inverterMode' AND m.value='THROTTLED'
+        """).fetchall()
+        model_row = conn.execute(
+            "SELECT model FROM equipment WHERE equipment_type='inverters' LIMIT 1"
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if not mppt_rows:
+        print("skipping temp/power chart: no MPPT telemetry found", file=sys.stderr)
+        return []
+
+    nameplate_match = re.match(r"SE(\d+)", model_row[0]) if model_row and model_row[0] else None
+    nameplate_w = int(nameplate_match.group(1)) if nameplate_match else None
+
+    nx, ny = TEMP_POWER_NX, TEMP_POWER_NY
+    all_rows = mppt_rows + throttled_rows
+    tmax = max(r[0] for r in all_rows) * 1.05
+    pmax = max(r[1] for r in all_rows) * 1.05
+    grid: dict[tuple[int, int], int] = {}
+    for t, p in mppt_rows:
+        xi = min(nx - 1, int(t / tmax * nx))
+        yi = min(ny - 1, int(p / pmax * ny))
+        grid[(xi, yi)] = grid.get((xi, yi), 0) + 1
+    cells = [[xi, yi, c] for (xi, yi), c in grid.items()]
+    maxcount = max(c for _, _, c in cells) if cells else 0
+
+    path = DATA_DIR / "temp_power.json"
     path.write_text(json.dumps({
-        "n_periods": 53,
-        "month_ticks": month_ticks,
-        "years": {y: [round(v, 2) if v is not None else None for v in weekly_by_year[y]]
-                  for y in weekly_years},
+        "nx": nx, "ny": ny,
+        "tmax": round(tmax, 1), "pmax": round(pmax, 1),
+        "maxcount": maxcount, "cells": cells,
+        "throttled_points": [[round(t, 1), round(p, 1)] for t, p in throttled_rows],
+        "n_mppt": len(mppt_rows), "n_throttled": len(throttled_rows),
+        "nameplate_w": nameplate_w,
     }, indent=2) + "\n", encoding="utf-8")
-    written.append("data/solar_weekly.json")
-
-    return written
+    return ["data/temp_power.json"]
 
 
 def git(*args: str) -> None:
@@ -181,6 +232,7 @@ def main() -> int:
     synced = sync_ops_charts()
     synced.extend(sync_battery_heatmap())
     synced.extend(sync_solar_charts())
+    synced.extend(sync_temp_power_chart())
 
     # Stage everything, not just the data files — picks up any other edits
     # (index.html, scripts, etc.) sitting in the working tree.
