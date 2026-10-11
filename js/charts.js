@@ -363,13 +363,15 @@
       svg.appendChild(txt);
     });
 
+    var rhBinWidth = data.humidity_bin_width || 5;
     rhBins.forEach(function(rb,ri){
-      if (ri % 4 !== 0 && ri !== rhBins.length-1) return;
+      var isTop = ri === rhBins.length-1;
+      if (ri % 4 !== 0 && !isTop) return;
       var txt = document.createElementNS(svgns,"text");
       txt.setAttribute("class","gtick");
       txt.setAttribute("x",2);
-      txt.setAttribute("y", PAD_T+(rows-1-ri)*cellH+cellH/2+3);
-      txt.textContent = rb+"%";
+      txt.setAttribute("y", isTop ? PAD_T+7 : PAD_T+(rows-1-ri)*cellH+cellH/2+3);
+      txt.textContent = (isTop ? rb+rhBinWidth : rb)+"%";
       svg.appendChild(txt);
     });
 
