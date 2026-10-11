@@ -851,4 +851,142 @@
   fetch("data/temp_power.json").then(function(r){ return r.json(); })
     .then(function(d){ buildTempPowerChart(d); })
     .catch(function(err){ console.error("failed to load temp_power.json", err); });
+
+  // --- inverter operating-state split (donut) -----------------------------
+
+  // Six states, six colours already in the palette: the three brand accents
+  // for the "doing something" states, the three ink tones for "not" states.
+  var MODE_COLORS = {
+    MPPT:      "var(--energy)",
+    STARTING:  "var(--weheat)",
+    THROTTLED: "var(--battery)",
+    STANDBY:   "var(--ink-1)",
+    OFF:       "var(--ink-2)",
+    SLEEPING:  "var(--ink-3)"
+  };
+  var MODE_FALLBACK_COLOR = "var(--ink-2)";
+
+  function buildModeDonut(data){
+    var card = document.getElementById("card-inverter-mode");
+    var wrap = card.querySelector(".chart-wrap");
+    var states = data.states;
+
+    var W=600,H=500,CX=300,CY=200,R_OUT=188,R_IN=120;
+
+    var svgns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(svgns,"svg");
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+
+    function polar(angle, r){ return [CX + r*Math.cos(angle), CY + r*Math.sin(angle)]; }
+
+    function slicePath(startAngle, endAngle, rOut){
+      var so = polar(startAngle, rOut), eo = polar(endAngle, rOut);
+      var si = polar(endAngle, R_IN), ei = polar(startAngle, R_IN);
+      var large = (endAngle-startAngle) > Math.PI ? 1 : 0;
+      return "M"+so[0]+","+so[1]+
+        " A"+rOut+","+rOut+" 0 "+large+" 1 "+eo[0]+","+eo[1]+
+        " L"+si[0]+","+si[1]+
+        " A"+R_IN+","+R_IN+" 0 "+large+" 0 "+ei[0]+","+ei[1]+" Z";
+    }
+
+    var tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+
+    var centerLabel = document.createElementNS(svgns,"text");
+    centerLabel.setAttribute("class","gtick");
+    centerLabel.setAttribute("x",CX); centerLabel.setAttribute("y",CY-4);
+    centerLabel.setAttribute("text-anchor","middle");
+    centerLabel.textContent = "samples";
+    svg.appendChild(centerLabel);
+    var centerVal = document.createElementNS(svgns,"text");
+    centerVal.setAttribute("x",CX); centerVal.setAttribute("y",CY+14);
+    centerVal.setAttribute("text-anchor","middle");
+    centerVal.setAttribute("fill","var(--ink-1)");
+    centerVal.setAttribute("style","font-size:15px;font-weight:600;");
+    centerVal.textContent = data.total_samples.toLocaleString();
+    svg.appendChild(centerVal);
+
+    var slicesG = document.createElementNS(svgns,"g");
+    var cum = 0;
+    var sliceEls = [];
+    states.forEach(function(s){
+      var frac = s.pct/100;
+      var start = -Math.PI/2 + cum*2*Math.PI;
+      var end = start + frac*2*Math.PI;
+      cum += frac;
+
+      var path = document.createElementNS(svgns,"path");
+      path.setAttribute("d", slicePath(start, end, R_OUT));
+      path.setAttribute("fill", MODE_COLORS[s.state] || MODE_FALLBACK_COLOR);
+      path.setAttribute("stroke","var(--surface)");
+      path.setAttribute("stroke-width","1.5");
+      path.style.cursor = "pointer";
+      slicesG.appendChild(path);
+      sliceEls.push(path);
+
+      path.addEventListener("mouseenter", function(){
+        path.setAttribute("d", slicePath(start, end, R_OUT+6));
+        var mid = (start+end)/2;
+        var pt = polar(mid, R_OUT+6);
+        var rectBox = svg.getBoundingClientRect();
+        var scale = rectBox.width / W;
+        tooltip.innerHTML = '<b>'+s.state+'</b><br>'+s.pct+'% &nbsp;('+s.count.toLocaleString()+' samples)';
+        tooltip.style.left = (pt[0]*scale)+"px";
+        tooltip.style.top = (pt[1]*scale)+"px";
+        tooltip.style.opacity = 1;
+      });
+      path.addEventListener("mouseleave", function(){
+        path.setAttribute("d", slicePath(start, end, R_OUT));
+        tooltip.style.opacity = 0;
+      });
+    });
+    svg.appendChild(slicesG);
+
+    // legend: below the donut, three columns x two rows, each row a single
+    // line (coloured dot, state name, muted pct) rather than the chart's
+    // usual separate-line stat blocks — six short entries read fine packed.
+    var LEGEND_COLS = 3, itemW = 180, rowH = 26;
+    var legendTop = CY + R_OUT + 34;
+    var legendX0 = CX - (LEGEND_COLS*itemW)/2;
+    states.forEach(function(s,i){
+      var col = i % LEGEND_COLS;
+      var row = Math.floor(i/LEGEND_COLS);
+      var x = legendX0 + col*itemW;
+      var y = legendTop + row*rowH;
+
+      var dot = document.createElementNS(svgns,"circle");
+      dot.setAttribute("cx",x); dot.setAttribute("cy",y); dot.setAttribute("r","5");
+      dot.setAttribute("fill", MODE_COLORS[s.state] || MODE_FALLBACK_COLOR);
+      svg.appendChild(dot);
+
+      var label = document.createElementNS(svgns,"text");
+      label.setAttribute("x",x+12); label.setAttribute("y",y+4);
+      label.setAttribute("style","font-size:11.5px;");
+      svg.appendChild(label);
+
+      var nameSpan = document.createElementNS(svgns,"tspan");
+      nameSpan.setAttribute("fill","var(--ink-1)");
+      nameSpan.textContent = s.state;
+      label.appendChild(nameSpan);
+
+      var pctSpan = document.createElementNS(svgns,"tspan");
+      pctSpan.setAttribute("fill","var(--ink-3)");
+      pctSpan.textContent = "  "+s.pct+"%";
+      label.appendChild(pctSpan);
+    });
+
+    wrap.appendChild(svg);
+    wrap.appendChild(tooltip);
+
+    var mppt = states.filter(function(s){ return s.state === "MPPT"; })[0];
+    card.querySelector('[data-stat="mppt-pct"]').textContent = mppt ? mppt.pct+"%" : "—";
+    card.querySelector('[data-stat="mppt-awake"]').textContent =
+      data.mppt_pct_awake != null ? data.mppt_pct_awake+"%" : "—";
+    card.querySelector('[data-stat="samples"]').textContent = data.total_samples.toLocaleString();
+  }
+
+  fetch("data/inverter_mode.json").then(function(r){ return r.json(); })
+    .then(function(d){ buildModeDonut(d); })
+    .catch(function(err){ console.error("failed to load inverter_mode.json", err); });
 })();

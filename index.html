@@ -22,6 +22,8 @@
     <p class="bio">
       <b>$ cat about.txt</b><br>
       This page shows some graphs from my home energy systems, heatpump and battery. Sometimes new graphs will be added and sometimes older ones will be removed. Probably because I think they are useless or just ugly. Data is updated on a more or less regular basis, about one time per week. No live feed.
+      <br>
+      Most graphs are not the standard graphs you would see on a standard heat pump, battery,<sup>1</sup> or solar panel dashboard, but rather some analysis of the data that I find interesting. Data  is generally retrieved via the API of the respective devices, and then processed and stored in a local database.
     </p>
 
     <p><b>Heat pump data</b></p>
@@ -91,7 +93,7 @@
 
     <p><b>Home battery data</b></p>
 
-    <p class="info"> This is some data of my AlphaESS home battery. I choose a 9.3 kWh battery as I think it's a good balance between cost and performance, higher capacity batteries do yield a bit more but that is mainly during summer months when there is enough solar energy and the consumption is limited. These graphs show the state of charge over time.</p>
+    <p class="info">This is some data of my AlphaESS home battery. I choose a 9.3 kWh battery as I think it's a good balance between cost and performance, higher capacity batteries do yield a bit more but that is mainly during summer months when there is enough solar energy and the consumption is limited. These graphs show the state of charge over time.</p>
 
     <div class="grid">
 
@@ -112,10 +114,25 @@
 
     <p><b>Solar energy data</b></p>
     <p class="info">This spider plot (or radar plot if you have a mild form of arachnophobia) shows the energy produced by my 12 solar panels over different months and years. 
-      The other chart shows inverter temperature versus AC output power, with every Throttled (power-capped) sample picked out against the general MPPT density — Throttled sits at a fairly fixed power level (~3700 W) across a range of temperatures, so it reads as a power ceiling rather than a thermal cutoff. This matches the max of my 16A fuse.
-    More info on MPPT on <a href="https://en.wikipedia.org/wiki/Maximum_power_point_tracking" target="_blank">Wikipedia</a></p>
+      The other chart shows inverter temperature versus AC output power, with every Throttled (power-capped) sample picked out against the general MPPT density — Throttled sits at a fairly fixed power level (3700 W, a limit set by the installer) across a range of temperatures, 
+      so it reads as a power ceiling rather than a thermal cutoff. Just matches a 16A fuse but is higher that the rating my SE3500H inverter is rated for (3500 W).
+      More info on MPPT on <a href="https://en.wikipedia.org/wiki/Maximum_power_point_tracking" target="_blank">Wikipedia</a>. The inverter state chart shows the same telemetry split by operating state — MPPT is normal production, STARTING is the daily ramp-up around dawn/dusk, THROTTLED is the power-capped samples from the other chart.</p>
 
     <div class="grid">
+
+      <div class="card" id="card-inverter-mode">
+        <div class="card-head">
+          <span class="card-name">INVERTER STATE<span class="dim"></span></span>
+          <span class="card-unit">% of samples</span>
+        </div>
+        <p class="card-desc">Share of telemetry samples spent in each inverter operating state.</p>
+        <div class="chart-wrap"></div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">MPPT</div><div class="stat-value" data-stat="mppt-pct">—</div></div>
+          <div class="stat"><div class="stat-label">MPPT while awake</div><div class="stat-value" data-stat="mppt-awake">—</div></div>
+          <div class="stat"><div class="stat-label">Samples</div><div class="stat-value" data-stat="samples">—</div></div>
+        </div>
+      </div>
 
       <div class="card" id="card-temp-power">
         <div class="card-head">
@@ -149,9 +166,8 @@
 
 
     <footer>
-      <div><span class="k">$</span> schedule</div>
-      <div>0 8 * * 1  sync-dashboards.py&nbsp;&nbsp;<span class="k"># Task Scheduler, runs approximately weekly from home, pushes data/*.json</span></div>
-    </footer>
+
+      <sup>1</sup> - I am a fan of the Oxford comma. You should be too. <a href="https://en.wikipedia.org/wiki/Serial_comma" target="_blank">More info</a>
   </div>
 </div>
 

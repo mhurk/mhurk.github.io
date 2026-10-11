@@ -1,0 +1,36 @@
+{
+  "states": [
+    {
+      "state": "MPPT",
+      "count": 109494,
+      "pct": 70.53
+    },
+    {
+      "state": "STARTING",
+      "count": 42700,
+      "pct": 27.5
+    },
+    {
+      "state": "THROTTLED",
+      "count": 1650,
+      "pct": 1.06
+    },
+    {
+      "state": "SLEEPING",
+      "count": 1094,
+      "pct": 0.7
+    },
+    {
+      "state": "OFF",
+      "count": 309,
+      "pct": 0.2
+    },
+    {
+      "state": "STANDBY",
+      "count": 1,
+      "pct": 0.0
+    }
+  ],
+  "total_samples": 155248,
+  "mppt_pct_awake": 71.03
+}

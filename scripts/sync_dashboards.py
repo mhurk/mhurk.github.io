@@ -154,6 +154,47 @@ def sync_solar_charts() -> list[str]:
     return ["data/solar_monthly.json"]
 
 
+def sync_inverter_mode_chart() -> list[str]:
+    """Republish the inverter operating-state split (MPPT/STARTING/THROTTLED/...).
+
+    Queries solaredge.db directly for the telemetry's own `inverterMode`
+    field — same GROUP BY the sibling project's own
+    export_performance_data.py/fetch_inverter_mode() uses for its "4 ·
+    Inverter operating state" doughnut — plus the MPPT share of awake time
+    (excluding SLEEPING), same "awake" definition as that script's
+    build_summary().
+    """
+    if not SOLAREDGE_DB.exists():
+        print(f"skipping inverter mode chart: {SOLAREDGE_DB} not found", file=sys.stderr)
+        return []
+
+    import sqlite3
+    conn = sqlite3.connect(SOLAREDGE_DB)
+    try:
+        rows = conn.execute(
+            "SELECT value, COUNT(*) FROM equipment_telemetry WHERE field='inverterMode' "
+            "GROUP BY value ORDER BY COUNT(*) DESC"
+        ).fetchall()
+    finally:
+        conn.close()
+
+    if not rows:
+        print("skipping inverter mode chart: no inverterMode telemetry found", file=sys.stderr)
+        return []
+
+    total = sum(c for _, c in rows)
+    awake = sum(c for v, c in rows if v != "SLEEPING")
+    mppt = next((c for v, c in rows if v == "MPPT"), 0)
+
+    path = DATA_DIR / "inverter_mode.json"
+    path.write_text(json.dumps({
+        "states": [{"state": v, "count": c, "pct": round(c / total * 100, 2)} for v, c in rows],
+        "total_samples": total,
+        "mppt_pct_awake": round(mppt / awake * 100, 2) if awake else None,
+    }, indent=2) + "\n", encoding="utf-8")
+    return ["data/inverter_mode.json"]
+
+
 def sync_temp_power_chart() -> list[str]:
     """Republish the inverter temperature-vs-power chart (THROTTLED highlighted).
 
@@ -233,6 +274,7 @@ def main() -> int:
     synced.extend(sync_battery_heatmap())
     synced.extend(sync_solar_charts())
     synced.extend(sync_temp_power_chart())
+    synced.extend(sync_inverter_mode_chart())
 
     # Stage everything, not just the data files — picks up any other edits
     # (index.html, scripts, etc.) sitting in the working tree.
