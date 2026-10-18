@@ -9,6 +9,7 @@ edit to index.html) is committed and pushed along with it, not just the
 data files.
 """
 import json
+import re
 import subprocess
 import sys
 from datetime import date, timedelta
@@ -264,12 +265,25 @@ def sync_temp_power_chart() -> list[str]:
     return ["data/temp_power.json"]
 
 
+def update_last_updated(today: str) -> None:
+    """Stamp the footer's last-updated date with today's sync date."""
+    path = REPO_ROOT / "index.html"
+    html = path.read_text(encoding="utf-8")
+    html = re.sub(
+        r'(<span id="last-updated">)[^<]*(</span>)',
+        rf"\g<1>{today}\g<2>",
+        html,
+    )
+    path.write_text(html, encoding="utf-8")
+
+
 def git(*args: str) -> None:
     subprocess.run(["git", *args], cwd=REPO_ROOT, check=True)
 
 
 def main() -> int:
     today = date.today().isoformat()
+    update_last_updated(today)
     synced = sync_ops_charts()
     synced.extend(sync_battery_heatmap())
     synced.extend(sync_solar_charts())
