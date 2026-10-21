@@ -501,6 +501,28 @@
       }
     });
 
+    var maxLineD = "", pendingMove = true;
+    dates.forEach(function(dt,ri){
+      var maxH = null, maxSoc = -Infinity;
+      for (var h=0; h<24; h++){
+        var soc = lookup[dt+"|"+h];
+        if (soc === undefined) continue;
+        if (soc > maxSoc){ maxSoc = soc; maxH = h; }
+      }
+      if (maxH === null){ pendingMove = true; return; }
+      var px = PAD_L+maxH*cellW+cellW/2, py = TOP_H+ri*cellH+cellH/2;
+      maxLineD += (pendingMove ? "M" : " L") + px + "," + py;
+      pendingMove = false;
+    });
+    if (maxLineD){
+      var maxLine = document.createElementNS(svgns,"path");
+      maxLine.setAttribute("class","line-path");
+      maxLine.setAttribute("d",maxLineD);
+      maxLine.setAttribute("stroke","var(--weheat)");
+      maxLine.style.strokeWidth = "1";
+      svg.appendChild(maxLine);
+    }
+
     var legendRect = document.createElementNS(svgns,"rect");
     legendRect.setAttribute("x",PAD_L); legendRect.setAttribute("y",legendY);
     legendRect.setAttribute("width",legendW); legendRect.setAttribute("height",LEGEND_H);
