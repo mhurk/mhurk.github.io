@@ -3,17 +3,17 @@
     {
       "state": "MPPT",
       "count": 109494,
-      "pct": 70.11
+      "pct": 69.7
     },
     {
       "state": "STARTING",
-      "count": 43619,
-      "pct": 27.93
+      "count": 44515,
+      "pct": 28.34
     },
     {
       "state": "THROTTLED",
       "count": 1650,
-      "pct": 1.06
+      "pct": 1.05
     },
     {
       "state": "SLEEPING",
@@ -22,7 +22,7 @@
     },
     {
       "state": "OFF",
-      "count": 323,
+      "count": 337,
       "pct": 0.21
     },
     {
@@ -31,6 +31,6 @@
       "pct": 0.0
     }
   ],
-  "total_samples": 156181,
-  "mppt_pct_awake": 70.6
+  "total_samples": 157091,
+  "mppt_pct_awake": 70.19
 }
