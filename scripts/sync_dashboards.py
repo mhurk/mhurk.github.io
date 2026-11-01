@@ -2,30 +2,72 @@
 """Weekly sync: republish the heat pump charts and push the site.
 
 Run this once a week (see run_sync.bat for wiring it up to Windows Task
-Scheduler). Pulls the latest binned aggregates from the sibling
-Weheat_history project and overwrites data/*.json, then commits and pushes
-to origin/gh-pages. Any other change sitting in the working tree (e.g. an
-edit to index.html) is committed and pushed along with it, not just the
-data files.
+Scheduler). Pulls the latest binned aggregates from the house_monitor
+dashboard (the consolidated home-server app that replaced the separate
+Weheat_history/AlphaESS_history/Solaredge_history per-project dashboards)
+and overwrites data/*.json, then commits and pushes to origin/gh-pages. Any
+other change sitting in the working tree (e.g. an edit to index.html) is
+committed and pushed along with it, not just the data files.
 """
 import json
 import re
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from datetime import date, timedelta
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data"
 
-# Sibling project that already computes these as binned aggregates from the
-# heat pump's own history (data/weheat.db) — see its export_ops_report_data.py.
-WEHEAT_OPS_REPORT = Path(r"D:\Projects\Weheat_history\data\ops_report_data.json")
+# house_monitor is a home-server app on the local network that now holds all
+# the source data this page charts (it replaced the separate Weheat_history/
+# AlphaESS_history/Solaredge_history dashboards). Each of its report pages
+# bakes its own data into an inline <script id="report-data"
+# type="application/json"> payload, same convention as this repo's own
+# sibling projects used before the migration - we just read that payload
+# instead of loading a local JSON file or querying a local sqlite db.
+HOUSE_MONITOR_BASE_URL = "http://192.168.5.6"
+REPORT_DATA_RE = re.compile(
+    r'<script id="report-data" type="application/json">(.*?)</script>', re.S
+)
 
-# ops_report_data.json key -> homepage data file. Each one is overwritten
-# wholesale (a binned snapshot, not a weekly time series), and deliberately
-# excludes that file's `headline.weather_location` (approximate home
-# coordinates) — only the binned aggregates get published.
+_report_cache: dict[str, dict] = {}
+
+
+def fetch_report_data(path: str) -> dict | None:
+    """Fetch and parse one house_monitor report page's embedded JSON.
+
+    Cached per path within a run, since solar/ops_report.html is read by
+    both sync_temp_power_chart() and sync_inverter_mode_chart(). Returns
+    None (logging to stderr) rather than raising, so one unreachable report
+    doesn't abort the other syncs - same "skip and carry on" behaviour as
+    the old missing-local-file checks.
+    """
+    if path in _report_cache:
+        return _report_cache[path]
+
+    url = f"{HOUSE_MONITOR_BASE_URL}/{path}"
+    try:
+        with urllib.request.urlopen(url, timeout=30) as resp:
+            html = resp.read().decode("utf-8")
+    except (OSError, urllib.error.URLError) as exc:
+        print(f"skipping {path}: {url} unreachable ({exc})", file=sys.stderr)
+        return None
+
+    match = REPORT_DATA_RE.search(html)
+    if not match:
+        print(f"skipping {path}: no report-data payload found at {url}", file=sys.stderr)
+        return None
+
+    data = json.loads(match.group(1))
+    _report_cache[path] = data
+    return data
+
+
+# report-data key -> homepage data file. Each one is overwritten wholesale (a
+# binned snapshot, not a weekly time series).
 OPS_CHART_SNAPSHOTS = {
     "defrost_by_temp": "defrost_vs_temp.json",
     "defrost_by_humidity": "defrost_vs_humidity.json",
@@ -33,43 +75,23 @@ OPS_CHART_SNAPSHOTS = {
     "rpm_by_temp": "compressor_rpm.json",
 }
 
-# Sibling project for the home battery. It has no export-to-JSON step of its
-# own (sizing_report.html bakes the heatmap straight into inline SVG), so this
-# reuses its sizing.load() — same hourly-mean-SoC-by-(date, hour) aggregation
-# its own report charts — rather than re-deriving the local-time bucketing.
-ALPHAESS_SRC = Path(r"D:\Projects\AlphaESS_history\src")
-ALPHAESS_DB = Path(r"D:\Projects\AlphaESS_history\data\alphaess.db")
 BATTERY_HEATMAP_DAYS = 75  # ~3 months — keeps this repo's copy a stable size as the source grows
-
-# Sibling project for solar production. Its own export_performance_data.py
-# computes a monthly_by_year aggregate, so this queries solaredge.db
-# directly — same SQL its fetch_daily() uses (sum of the 'Production' meter
-# per day) — just bucketed by month here. Replaced the earlier \\BigStation
-# Home Assistant CSV export, which wasn't accurate/complete enough (HA's own
-# solar_production history).
-SOLAREDGE_DB = Path(r"D:\Projects\Solaredge_history\solaredge.db")
-MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-
-# Grid resolution for the temperature-vs-power density chart (same sparse
-# [xi,yi,count] shape as the sibling project's own ops_analysis.py/
-# fetch_temp_power(), just a coarser grid sized for a small card).
-TEMP_POWER_NX = 60
-TEMP_POWER_NY = 50
 
 
 def sync_ops_charts() -> list[str]:
     """Republish the defrost/compressor-RPM characterization charts.
 
-    Reads the already-computed binned aggregates from the sibling
-    Weheat_history project's ops report export. Does not trigger that
-    project's own data refresh — run its update_weheat_data.bat first if you
-    want fresher numbers.
+    Reads the already-computed binned aggregates straight out of
+    house_monitor's heatpump/ops_report.html - same keys this repo used to
+    read from Weheat_history's own ops_report_data.json export, now served
+    over HTTP instead. Deliberately leaves out that payload's
+    `headline.weather_location` (approximate home coordinates) - only the
+    binned aggregates get published.
     """
-    if not WEHEAT_OPS_REPORT.exists():
-        print(f"skipping ops charts: {WEHEAT_OPS_REPORT} not found", file=sys.stderr)
+    ops = fetch_report_data("heatpump/ops_report.html")
+    if ops is None:
         return []
 
-    ops = json.loads(WEHEAT_OPS_REPORT.read_text(encoding="utf-8"))
     written = []
     for ops_key, filename in OPS_CHART_SNAPSHOTS.items():
         path = DATA_DIR / filename
@@ -81,33 +103,25 @@ def sync_ops_charts() -> list[str]:
 def sync_battery_heatmap() -> list[str]:
     """Republish the battery state-of-charge heatmap (hour x date).
 
-    Calls the sibling AlphaESS_history project's own sizing.load() against
-    its data/alphaess.db, then republishes just the heatmap (not the
-    full/empty-day stats sizing_report.html also computes).
+    house_monitor's battery/sizing_report.html publishes its own heatmap as
+    {date: {hour: soc}}; only the last ~2 months get republished here since
+    the server's own window already runs several months back and the source
+    keeps growing, but this repo's copy should stay a stable size.
     """
-    if not ALPHAESS_DB.exists() or not ALPHAESS_SRC.exists():
-        print(f"skipping battery heatmap: {ALPHAESS_DB} or {ALPHAESS_SRC} not found", file=sys.stderr)
+    sizing = fetch_report_data("battery/sizing_report.html")
+    if sizing is None:
         return []
 
-    sys.path.insert(0, str(ALPHAESS_SRC))
-    import sqlite3
-    from alphaess_history import sizing  # type: ignore
-
-    conn = sqlite3.connect(ALPHAESS_DB)
-    try:
-        _, heatmap = sizing.load(conn)
-    finally:
-        conn.close()
-
-    # Only publish the last ~2 months here — the source db keeps growing, but
-    # this repo's copy should stay a stable size.
     cutoff = date.today() - timedelta(days=BATTERY_HEATMAP_DAYS)
-    heatmap = {(d, h): v for (d, h), v in heatmap.items() if d >= cutoff}
+    cells = []
+    for day_str, hours in sizing["heatmap"].items():
+        d = date.fromisoformat(day_str)
+        if d < cutoff:
+            continue
+        for hour_str, soc in hours.items():
+            cells.append({"date": day_str, "hour": int(hour_str), "soc": round(soc, 1)})
+    cells.sort(key=lambda c: (c["date"], c["hour"]))
 
-    cells = [
-        {"date": d.isoformat(), "hour": h, "soc": round(v, 1)}
-        for (d, h), v in sorted(heatmap.items())
-    ]
     path = DATA_DIR / "battery_heatmap.json"
     path.write_text(json.dumps(cells, indent=2) + "\n", encoding="utf-8")
     return ["data/battery_heatmap.json"]
@@ -116,41 +130,26 @@ def sync_battery_heatmap() -> list[str]:
 def sync_solar_charts() -> list[str]:
     """Republish monthly solar production, grouped by year.
 
-    Queries solaredge.db directly for daily production (same SQL as the
-    sibling project's own fetch_daily()), then buckets those daily kWh
-    figures into calendar months here. Years that are all-zero are left out
-    entirely (defensive; shouldn't happen with this source, unlike the old
-    CSV one).
+    house_monitor's solar/performance_report.html already buckets daily
+    production into a monthly_by_year matrix (null for months not yet
+    elapsed in the current year). Years that are all-zero/null are left out
+    entirely (defensive; shouldn't happen with this source).
     """
-    if not SOLAREDGE_DB.exists():
-        print(f"skipping solar charts: {SOLAREDGE_DB} not found", file=sys.stderr)
+    perf = fetch_report_data("solar/performance_report.html")
+    if perf is None:
         return []
 
-    import sqlite3
-    conn = sqlite3.connect(SOLAREDGE_DB)
-    try:
-        daily = conn.execute(
-            "SELECT substr(timestamp,1,10) AS day, SUM(value)/1000.0 AS kwh "
-            "FROM energy_details WHERE meter_type='Production' GROUP BY day ORDER BY day"
-        ).fetchall()
-    finally:
-        conn.close()
+    mby = perf["monthly_by_year"]
+    years = {
+        y: [round(v, 2) if v is not None else None for v in mby["matrix"][y]]
+        for y in mby["years"]
+        if any(v for v in mby["matrix"][y])
+    }
 
-    monthly_by_year: dict[str, list[float | None]] = {}
-
-    for day_str, kwh in daily:
-        d = date.fromisoformat(day_str)
-        month_year = str(d.year)
-        row = monthly_by_year.setdefault(month_year, [None] * 12)
-        row[d.month - 1] = (row[d.month - 1] or 0) + kwh
-
-    monthly_years = sorted(y for y, vals in monthly_by_year.items()
-                            if any(v is not None and v > 0 for v in vals))
     path = DATA_DIR / "solar_monthly.json"
     path.write_text(json.dumps({
-        "periods": MONTH_LABELS,
-        "years": {y: [round(v, 2) if v is not None else None for v in monthly_by_year[y]]
-                  for y in monthly_years},
+        "periods": mby["month_labels"],
+        "years": years,
     }, indent=2) + "\n", encoding="utf-8")
     return ["data/solar_monthly.json"]
 
@@ -158,38 +157,28 @@ def sync_solar_charts() -> list[str]:
 def sync_inverter_mode_chart() -> list[str]:
     """Republish the inverter operating-state split (MPPT/STARTING/THROTTLED/...).
 
-    Queries solaredge.db directly for the telemetry's own `inverterMode`
-    field — same GROUP BY the sibling project's own
-    export_performance_data.py/fetch_inverter_mode() uses for its "4 ·
-    Inverter operating state" doughnut — plus the MPPT share of awake time
-    (excluding SLEEPING), same "awake" definition as that script's
-    build_summary().
+    Reads house_monitor's solar/ops_report.html `mode` breakdown (same
+    labels/counts/pct this repo used to compute from solaredge.db's own
+    inverterMode telemetry) and derives the MPPT share of awake time
+    (excluding SLEEPING), same "awake" definition as before.
     """
-    if not SOLAREDGE_DB.exists():
-        print(f"skipping inverter mode chart: {SOLAREDGE_DB} not found", file=sys.stderr)
+    ops = fetch_report_data("solar/ops_report.html")
+    if ops is None:
         return []
 
-    import sqlite3
-    conn = sqlite3.connect(SOLAREDGE_DB)
-    try:
-        rows = conn.execute(
-            "SELECT value, COUNT(*) FROM equipment_telemetry WHERE field='inverterMode' "
-            "GROUP BY value ORDER BY COUNT(*) DESC"
-        ).fetchall()
-    finally:
-        conn.close()
-
-    if not rows:
-        print("skipping inverter mode chart: no inverterMode telemetry found", file=sys.stderr)
-        return []
-
-    total = sum(c for _, c in rows)
-    awake = sum(c for v, c in rows if v != "SLEEPING")
-    mppt = next((c for v, c in rows if v == "MPPT"), 0)
+    mode = ops["mode"]
+    labels, counts, pct = mode["labels"], mode["counts"], mode["pct"]
+    total = mode["total"]
+    sleeping = counts[labels.index("SLEEPING")] if "SLEEPING" in labels else 0
+    mppt = counts[labels.index("MPPT")] if "MPPT" in labels else 0
+    awake = total - sleeping
 
     path = DATA_DIR / "inverter_mode.json"
     path.write_text(json.dumps({
-        "states": [{"state": v, "count": c, "pct": round(c / total * 100, 2)} for v, c in rows],
+        "states": [
+            {"state": label, "count": count, "pct": round(p, 2)}
+            for label, count, p in zip(labels, counts, pct)
+        ],
         "total_samples": total,
         "mppt_pct_awake": round(mppt / awake * 100, 2) if awake else None,
     }, indent=2) + "\n", encoding="utf-8")
@@ -199,67 +188,26 @@ def sync_inverter_mode_chart() -> list[str]:
 def sync_temp_power_chart() -> list[str]:
     """Republish the inverter temperature-vs-power chart (THROTTLED highlighted).
 
-    Queries solaredge.db directly — same joins as the sibling project's own
-    ops_analysis.py/fetch_temp_power(), which has no standalone JSON export
-    of its own (baked straight into ops_report.html's inline <script>
-    payload) — rebuilding the sparse MPPT density grid and the list of
-    individual THROTTLED samples here, at a coarser resolution sized for a
-    small card rather than that report's full-width chart.
+    house_monitor's solar/ops_report.html already carries the sparse MPPT
+    density grid and the list of individual THROTTLED samples (its own
+    nx/ny resolution, not this repo's former coarser rebuild), plus the
+    inverter's nameplate AC rating - no local regex-on-model-string parsing
+    needed any more since the server already resolved it to a number.
     """
-    if not SOLAREDGE_DB.exists():
-        print(f"skipping temp/power chart: {SOLAREDGE_DB} not found", file=sys.stderr)
+    ops = fetch_report_data("solar/ops_report.html")
+    if ops is None:
         return []
 
-    import re
-    import sqlite3
-    conn = sqlite3.connect(SOLAREDGE_DB)
-    try:
-        mppt_rows = conn.execute("""
-            SELECT t.value, p.value
-            FROM equipment_telemetry m
-            JOIN equipment_telemetry t ON t.timestamp=m.timestamp AND t.serial_number=m.serial_number AND t.field='temperature'
-            JOIN equipment_telemetry p ON p.timestamp=m.timestamp AND p.serial_number=m.serial_number AND p.field='totalActivePower'
-            WHERE m.field='inverterMode' AND m.value='MPPT'
-        """).fetchall()
-        throttled_rows = conn.execute("""
-            SELECT t.value, p.value
-            FROM equipment_telemetry m
-            JOIN equipment_telemetry t ON t.timestamp=m.timestamp AND t.serial_number=m.serial_number AND t.field='temperature'
-            JOIN equipment_telemetry p ON p.timestamp=m.timestamp AND p.serial_number=m.serial_number AND p.field='totalActivePower'
-            WHERE m.field='inverterMode' AND m.value='THROTTLED'
-        """).fetchall()
-        model_row = conn.execute(
-            "SELECT model FROM equipment WHERE equipment_type='inverters' LIMIT 1"
-        ).fetchone()
-    finally:
-        conn.close()
-
-    if not mppt_rows:
-        print("skipping temp/power chart: no MPPT telemetry found", file=sys.stderr)
-        return []
-
-    nameplate_match = re.match(r"SE(\d+)", model_row[0]) if model_row and model_row[0] else None
-    nameplate_w = int(nameplate_match.group(1)) if nameplate_match else None
-
-    nx, ny = TEMP_POWER_NX, TEMP_POWER_NY
-    all_rows = mppt_rows + throttled_rows
-    tmax = max(r[0] for r in all_rows) * 1.05
-    pmax = max(r[1] for r in all_rows) * 1.05
-    grid: dict[tuple[int, int], int] = {}
-    for t, p in mppt_rows:
-        xi = min(nx - 1, int(t / tmax * nx))
-        yi = min(ny - 1, int(p / pmax * ny))
-        grid[(xi, yi)] = grid.get((xi, yi), 0) + 1
-    cells = [[xi, yi, c] for (xi, yi), c in grid.items()]
-    maxcount = max(c for _, _, c in cells) if cells else 0
+    tp = ops["temp_power"]
+    nameplate_w = ops["equipment"][0]["nameplate_w"] if ops.get("equipment") else None
 
     path = DATA_DIR / "temp_power.json"
     path.write_text(json.dumps({
-        "nx": nx, "ny": ny,
-        "tmax": round(tmax, 1), "pmax": round(pmax, 1),
-        "maxcount": maxcount, "cells": cells,
-        "throttled_points": [[round(t, 1), round(p, 1)] for t, p in throttled_rows],
-        "n_mppt": len(mppt_rows), "n_throttled": len(throttled_rows),
+        "nx": tp["nx"], "ny": tp["ny"],
+        "tmax": round(tp["tmax"], 1), "pmax": round(tp["pmax"], 1),
+        "maxcount": tp["maxcount"], "cells": tp["cells"],
+        "throttled_points": [[round(t, 1), round(p, 1)] for t, p in tp["throttled_points"]],
+        "n_mppt": tp["n_mppt"], "n_throttled": tp["n_throttled"],
         "nameplate_w": nameplate_w,
     }, indent=2) + "\n", encoding="utf-8")
     return ["data/temp_power.json"]
