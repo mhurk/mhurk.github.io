@@ -423,20 +423,25 @@
     var wrap = card.querySelector(".chart-wrap");
 
     var dates = Array.from(new Set(cells.map(function(c){ return c.date; }))).sort();
-    var rows = dates.length;
-    var cols = 24;
+    var cols = dates.length;
+    var rows = 24;
 
     var lookup = {};
     cells.forEach(function(c){ lookup[c.date+"|"+c.hour] = c.soc; });
 
-    var W=600, PAD_L=42, PAD_R=8, TOP_H=16, cellH=4;
+    var W=600, PAD_L=34, PAD_R=8, PAD_T=8, cellH=8;
     var GRID_H = rows*cellH;
-    var LEGEND_GAP=16, LEGEND_H=8, LEGEND_LABEL_H=20, BOTTOM_PAD=8;
-    var H = TOP_H + GRID_H + LEGEND_GAP + LEGEND_H + LEGEND_LABEL_H + BOTTOM_PAD;
+    var LABEL_GAP=14, LEGEND_GAP=12, LEGEND_H=8, LEGEND_LABEL_H=20, BOTTOM_PAD=4;
+    var H = PAD_T + GRID_H + LABEL_GAP + LEGEND_GAP + LEGEND_H + LEGEND_LABEL_H + BOTTOM_PAD;
     var gridW = W-PAD_L-PAD_R;
     var cellW = gridW/cols;
-    var legendY = TOP_H+GRID_H+LEGEND_GAP;
+    var xLabelY = PAD_T+GRID_H+LABEL_GAP;
+    var legendY = xLabelY+LEGEND_GAP;
     var legendW = gridW;
+
+    // hour 0 sits at the bottom of the grid, rising to hour 23 at the top —
+    // matches house_monitor's own "state of charge by hour and date" chart.
+    function rowY(h){ return PAD_T + (23-h)*cellH; }
 
     var svgns = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(svgns,"svg");
@@ -454,12 +459,11 @@
     defs.appendChild(legendGrad);
     svg.appendChild(defs);
 
-    [0,3,6,9,12,15,18,21].forEach(function(h){
+    [0,6,12,18].forEach(function(h){
       var txt = document.createElementNS(svgns,"text");
-      txt.setAttribute("class","xtick");
-      txt.setAttribute("x", PAD_L+h*cellW+cellW/2);
-      txt.setAttribute("y", 10);
-      txt.setAttribute("text-anchor","middle");
+      txt.setAttribute("class","gtick");
+      txt.setAttribute("x",2);
+      txt.setAttribute("y", rowY(h)+cellH/2+3);
       txt.textContent = String(h).padStart(2,"0");
       svg.appendChild(txt);
     });
@@ -467,11 +471,11 @@
     var tooltip = document.createElement("div");
     tooltip.className = "tooltip";
 
-    dates.forEach(function(dt,ri){
+    dates.forEach(function(dt,ci){
       for (var h=0; h<24; h++){
         var soc = lookup[dt+"|"+h];
         if (soc === undefined) continue;
-        var x = PAD_L+h*cellW, y = TOP_H+ri*cellH;
+        var x = PAD_L+ci*cellW, y = rowY(h);
         var rect = document.createElementNS(svgns,"rect");
         rect.setAttribute("x",x); rect.setAttribute("y",y);
         rect.setAttribute("width",cellW); rect.setAttribute("height",cellH);
@@ -491,18 +495,20 @@
         rect.addEventListener("mouseleave", function(){ tooltip.style.opacity = 0; });
       }
 
-      if (ri % 14 === 0 || ri === rows-1){
+      var isLast = ci === cols-1;
+      if (isLast || (ci % 14 === 0 && (cols-1-ci)*cellW > 40)){
         var label = document.createElementNS(svgns,"text");
-        label.setAttribute("class","gtick");
-        label.setAttribute("x",2);
-        label.setAttribute("y", TOP_H+ri*cellH+cellH+2);
+        label.setAttribute("class","xtick");
+        label.setAttribute("x", PAD_L+ci*cellW+cellW/2);
+        label.setAttribute("y", xLabelY);
+        label.setAttribute("text-anchor", isLast ? "end" : "middle");
         label.textContent = shortDate(dt);
         svg.appendChild(label);
       }
     });
 
     var maxLineD = "", pendingMove = true;
-    dates.forEach(function(dt,ri){
+    dates.forEach(function(dt,ci){
       var maxH = null, maxSoc = -Infinity;
       for (var h=0; h<24; h++){
         var soc = lookup[dt+"|"+h];
@@ -510,7 +516,7 @@
         if (soc > maxSoc){ maxSoc = soc; maxH = h; }
       }
       if (maxH === null){ pendingMove = true; return; }
-      var px = PAD_L+maxH*cellW+cellW/2, py = TOP_H+ri*cellH+cellH/2;
+      var px = PAD_L+ci*cellW+cellW/2, py = rowY(maxH)+cellH/2;
       maxLineD += (pendingMove ? "M" : " L") + px + "," + py;
       pendingMove = false;
     });
