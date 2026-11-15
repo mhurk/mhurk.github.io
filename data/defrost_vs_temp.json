@@ -26,18 +26,18 @@
   },
   {
     "temp_bin": 1.0,
-    "cycles": 159,
-    "avg_duration_min": 8.56
+    "cycles": 160,
+    "avg_duration_min": 8.59
   },
   {
     "temp_bin": 2.0,
-    "cycles": 190,
+    "cycles": 191,
     "avg_duration_min": 8.76
   },
   {
     "temp_bin": 3.0,
-    "cycles": 134,
-    "avg_duration_min": 8.84
+    "cycles": 135,
+    "avg_duration_min": 8.88
   },
   {
     "temp_bin": 4.0,

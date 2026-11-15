@@ -61,8 +61,8 @@
   },
   {
     "humidity_bin": 95,
-    "cycles": 275,
-    "avg_duration_min": 8.73
+    "cycles": 282,
+    "avg_duration_min": 8.71
   },
   {
     "humidity_bin": 100,

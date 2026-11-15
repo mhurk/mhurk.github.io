@@ -800,7 +800,7 @@
     {
       "temp_bin": 1,
       "humidity_bin": 95,
-      "count": 64
+      "count": 67
     },
     {
       "temp_bin": 2,
@@ -900,7 +900,7 @@
     {
       "temp_bin": 2,
       "humidity_bin": 95,
-      "count": 49
+      "count": 53
     },
     {
       "temp_bin": 3,
