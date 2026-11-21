@@ -26,23 +26,23 @@
   },
   {
     "temp_bin": 1.0,
-    "cycles": 160,
-    "avg_duration_min": 8.59
+    "cycles": 161,
+    "avg_duration_min": 8.57
   },
   {
     "temp_bin": 2.0,
-    "cycles": 191,
-    "avg_duration_min": 8.76
+    "cycles": 194,
+    "avg_duration_min": 8.78
   },
   {
     "temp_bin": 3.0,
-    "cycles": 135,
-    "avg_duration_min": 8.88
+    "cycles": 136,
+    "avg_duration_min": 8.91
   },
   {
     "temp_bin": 4.0,
-    "cycles": 110,
-    "avg_duration_min": 8.66
+    "cycles": 111,
+    "avg_duration_min": 8.65
   },
   {
     "temp_bin": 5.0,

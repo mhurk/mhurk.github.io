@@ -51,8 +51,8 @@
   },
   {
     "humidity_bin": 85,
-    "cycles": 164,
-    "avg_duration_min": 8.87
+    "cycles": 165,
+    "avg_duration_min": 8.91
   },
   {
     "humidity_bin": 90,
@@ -61,12 +61,12 @@
   },
   {
     "humidity_bin": 95,
-    "cycles": 282,
-    "avg_duration_min": 8.71
+    "cycles": 285,
+    "avg_duration_min": 8.73
   },
   {
     "humidity_bin": 100,
-    "cycles": 19,
-    "avg_duration_min": 9.66
+    "cycles": 20,
+    "avg_duration_min": 9.72
   }
 ]

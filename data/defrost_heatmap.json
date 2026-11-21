@@ -600,7 +600,7 @@
     {
       "temp_bin": -1,
       "humidity_bin": 95,
-      "count": 50
+      "count": 51
     },
     {
       "temp_bin": 0,
@@ -800,7 +800,7 @@
     {
       "temp_bin": 1,
       "humidity_bin": 95,
-      "count": 67
+      "count": 69
     },
     {
       "temp_bin": 2,
@@ -900,7 +900,7 @@
     {
       "temp_bin": 2,
       "humidity_bin": 95,
-      "count": 53
+      "count": 54
     },
     {
       "temp_bin": 3,
@@ -990,7 +990,7 @@
     {
       "temp_bin": 3,
       "humidity_bin": 85,
-      "count": 25
+      "count": 26
     },
     {
       "temp_bin": 3,
